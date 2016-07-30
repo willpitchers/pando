@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
-"""
-Run CPE_ongoing requests on repeatedly updated list of MDU IDs.
+'''
+Run requests on a list of isolate IDs.
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
 YYYMMDD_HHMM: 20160730_0150
+'''
 
-"""
-
-#remove unused modules
+#to do: remove unused modules, tidy formatting, parallelise tasks
 import os
 import argparse
 import sys
