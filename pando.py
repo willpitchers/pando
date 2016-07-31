@@ -36,7 +36,7 @@ from multiprocessing import Pool
 # set up the arguments parser to deal with the command line input
 PARSER = argparse.ArgumentParser(description="CPE ongoing")
 PARSER.add_argument("-i", "--mdu_read_ids", help="One MDU-ID per line.\
-                    Use full path or put in same folder as run folder.",
+                    Put in same folder as run folder.", #need to allow any path
                     required=True)
 PARSER.add_argument("-w", "--wgs_qc", help="Path to WGS\
                     QC. Default '/mnt/seq/MDU/QC/'",
@@ -130,7 +130,6 @@ class Isolate(object):
         m = {key: 'maybe' for (key) in maybe}
         ab_results = dict(itertools.chain(y.iteritems(), m.iteritems()))
         abricate_results = pd.DataFrame([ab_results], index=[self.id])
-#         print abricate_results
         return abricate_results
        
     def mlst(self, species, assembly):
@@ -167,7 +166,6 @@ class Isolate(object):
                 mlst_formatted_dict[str(k)] = out[i]
                 k += 1
         mlst_results = pd.DataFrame([mlst_formatted_dict], index = [self.id])
-#         print mlst_results
         return mlst_results
 
     def kraken_reads(self):
@@ -199,11 +197,11 @@ class Isolate(object):
         Get the kraken best hit from assemblies.
         '''
         #Pipe these commands together
-        cmd_kraken = 'nice kraken --threads 4 --db /bio/db/kraken/minikraken --fasta-input /mnt/seq/MDU/QC/'+self.id+'/contigs.fa'
+        cmd_kraken = 'nice kraken --threads 1 --db /bio/db/kraken/minikraken --fasta-input /mnt/seq/MDU/QC/'+self.id+'/contigs.fa'
         cmd_krk_r = 'kraken-report'
         cmd_grep = "grep -P '\tS\t'"
         cmd_sort = 'sort -k 1 -r'
-        cmd_head = 'head -3'
+        cmd_head = 'head -2'
 
         #Split the cmds using shlex, store in args
         args_kraken = shlex.split(cmd_kraken)
@@ -226,22 +224,10 @@ class Isolate(object):
 
     def species(self, kraken):
         '''
-        Based on the results of the kraken scans, define the species.
+        Based on the results of the kraken scan, define the species.
         '''
-        #If the #1 match is more than twice the #2 match, keep #1, else 'indet'
-        if len(kraken) > 1:
-            if float(kraken[0][0]) > 0 and float(kraken[1][0]) > 0:
-                if float(kraken[0][0])/float(kraken[1][0]) >= 2:
-                    species = kraken[0][5].lstrip()
-            else:
-                species = 'indet'
-            return species
-        if len(kraken) == 1:
-            if float(kraken[0][0]) > 5:
-                species = kraken[0][5].lstrip()
-            else:
-                species = 'indet'
-            return species
+        species = kraken[0][5].lstrip()
+        return species
 
     def species_conclusion(self, kraken_reads_species, kraken_contigs_species):
         '''
@@ -250,12 +236,10 @@ class Isolate(object):
         '''
         krs = kraken_reads_species
         kcs = kraken_contigs_species
-        if krs != kcs and krs != 'indet' and kcs != 'indet':
-            species_final = 'mixed'
-        if krs == 'indet' or kcs == 'indet':
-            species_final = 'indet'
         if krs == kcs:
             species_final = krs
+        if krs != kcs:
+            species_final = 'indet'
         return species_final
 
     def kraken_percentage(self, kraken):
@@ -273,7 +257,6 @@ def iso_sub_list(id):
     proc1 = Popen(args, stdout = PIPE)
     proc2 = Popen(args_cut, stdin = proc1.stdout, stdout=PIPE, stderr=PIPE)
     output = filter(None, proc2.stdout.read().rstrip().split('\n'))
-#     print output
     return output
 
 def isolate_request_ids(id_file):
@@ -338,6 +321,7 @@ def kraken_contigs_multiprocessing(iso):
     '''
     id = Isolate(iso)
     kraken_contigs_hit = id.kraken_contigs()
+    ###if 
     species_contigs = id.species(kraken_contigs_hit)
     percent_match = id.kraken_percentage(kraken_contigs_hit)
     return iso, species_contigs, percent_match
@@ -362,7 +346,6 @@ def main():
     #Store translation dict (random 9-character filename: original filename
     iso_id_trans = {}
     for iso in isos:
-        print iso
         id = Isolate(iso)
         assembly_path = id.assembly()
         short_id = id.shortened_id()
@@ -393,13 +376,13 @@ def main():
         #Kraken set at 4 threads, so 18 processes can run on 72 CPUs
         n_isos = len(isos)
         print '\nRunning kraken on the assemblies:'
-        if n_isos <= 18:
+        if n_isos <= ARGS.threads:
             p = Pool(n_isos)
             results_k = p.map(kraken_contigs_multiprocessing, isos)
             for result in results_k:
                 kraken_contigs_dict[result[0]].extend([result[1], result[2]])
-        if n_isos > 18:
-            p = Pool(18)
+        else:
+            p = Pool(ARGS.threads)
             results_k = p.map(kraken_contigs_multiprocessing, isos)
             for result in results_k:
                 kraken_contigs_dict[result[0]].extend([result[1], result[2]])
@@ -476,6 +459,10 @@ def main():
         #Add an option to import metadata to merge with the output
         #Email the results
         #todo: wrap line widths
+#         msg = '''\'Hi,
+#             Please find attached the results for job '%s'. To view the results, open '+phandango+' and then simply drag and drop the attached .tre and .csv files into that window.  Alternatively, load the .tre in FigTree and import the annotations in the .tab file.\n\nGood luck with your investigations,\n\nPando.\''
+#             '''
+#         print msg
         phandango='https://jameshadfield.github.io/phandango/'
         cmd_mail = 'mail -s \''+ARGS.job_number+'\' -a '+t_out+' -a '+\
             csv+' -a '+tsv+' '+','.join(ARGS.email_addresses)+' <<< \'Hi,\
