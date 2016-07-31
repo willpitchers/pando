@@ -4,7 +4,7 @@
 Run requests on a list of isolate IDs.
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160731_1201
+YYYMMDD_HHMM: 20160730_0150
 '''
 
 #to do: remove unused modules, tidy formatting, parallelise tasks
@@ -81,6 +81,7 @@ class Isolate(object):
         '''
         self.id = id
         self.qc_path = ARGS.wgs_qc
+
     def assembly(self):
         '''
         Store the path to the assembly, or tell the user if it doesn't exist.
@@ -90,11 +91,13 @@ class Isolate(object):
             return isolate_qc_contigs
         else:
             print isolate_qc_contigs+' does not exist'
+
     def reads(self):
         '''
         Store the path to the QCd (trimmomatic-ed and FLASHed) reads.
         '''
         pass
+
     def shortened_id(self):
         '''
         Create a random 9 character (alphanumeric) tag for use as a tempfile
@@ -197,7 +200,7 @@ class Isolate(object):
         Get the kraken best hit from assemblies.
         '''
         #Pipe these commands together
-        cmd_kraken = 'nice kraken --threads 1 --db /bio/db/kraken/minikraken --fasta-input /mnt/seq/MDU/QC/'+self.id+'/contigs.fa'
+        cmd_kraken = 'nice kraken --threads 2 --db /bio/db/kraken/minikraken --fasta-input /mnt/seq/MDU/QC/'+self.id+'/contigs.fa'
         cmd_krk_r = 'kraken-report'
         cmd_grep = "grep -P '\tS\t'"
         cmd_sort = 'sort -k 1 -r'
@@ -209,14 +212,14 @@ class Isolate(object):
         args_grep = shlex.split(cmd_grep)
         args_sort = shlex.split(cmd_sort)
         args_head = shlex.split(cmd_head)
-       
+
         #Pipe the output of one args to another
         proc1 = Popen(args_kraken, stdout = PIPE)
         proc2 = Popen(args_krk_report, stdin=proc1.stdout, stdout=PIPE, stderr=PIPE)
         proc3 = Popen(args_grep, stdin=proc2.stdout, stdout=PIPE, stderr=PIPE)
         proc4 = Popen(args_sort, stdin=proc3.stdout, stdout=PIPE, stderr=PIPE)
         proc5 = Popen(args_head, stdin=proc4.stdout, stdout=PIPE, stderr=PIPE)
-       
+
         output = proc5.stdout.read()
         kraken = output.rstrip().split('\n')
         kraken = [line.strip().split('\t') for line in filter(None, kraken)]
@@ -312,7 +315,6 @@ def isolates_available(ids):
     print '\nNot found:\n'+'\n'.join(not_avail)
     #MUST use this set function, else unwanted duplicates in isos = BAD!
     avail = sorted(list(set(avail)))
-#     print 'avail', avail
     return avail
 
 def kraken_contigs_multiprocessing(iso):
@@ -376,13 +378,13 @@ def main():
         #Kraken set at 4 threads, so 18 processes can run on 72 CPUs
         n_isos = len(isos)
         print '\nRunning kraken on the assemblies:'
-        if n_isos <= ARGS.threads:
+        if n_isos <= 36:
             p = Pool(n_isos)
             results_k = p.map(kraken_contigs_multiprocessing, isos)
             for result in results_k:
                 kraken_contigs_dict[result[0]].extend([result[1], result[2]])
         else:
-            p = Pool(ARGS.threads)
+            p = Pool(36)
             results_k = p.map(kraken_contigs_multiprocessing, isos)
             for result in results_k:
                 kraken_contigs_dict[result[0]].extend([result[1], result[2]])
