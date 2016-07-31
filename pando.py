@@ -4,7 +4,7 @@
 Run requests on a list of isolate IDs.
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160730_0150
+YYYMMDD_HHMM: 20160731_1201
 '''
 
 #to do: remove unused modules, tidy formatting, parallelise tasks
