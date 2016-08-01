@@ -3,7 +3,7 @@
 With a file of isolate IDs as input, compile all results (abricate, kraken, mlst) into a single table and infer an NJ tree using the alignment-free Andi phylogenomic software.  Receive the tree and results table as an email at the end of the run.
 
 ### Example run command:
-`time nice python pando.py -i isolates_fileOfFileNames.txt -e user@domain.edu.au -j jobNumberX -d y`
+`time nice python pando.py -i isolate_IDs.txt -e user@domain.edu.au -j jobNumberX -d y`
 
 ### Get help:
 ```
