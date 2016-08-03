@@ -5,10 +5,6 @@ Run requests on a list of isolate IDs.
 Read in metadata from Excel spreadsheet.
 Add MALDI-ToF results, submit lab, and sp.
 Return a supermatrix of metadata and a tree.
-Metadata includes kraken, abricate, mlst,
-assembly (i.e., contig) metrics and 
-read metrics.
-
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
 YYYMMDD_HHMM: 20160803_1937
@@ -35,7 +31,7 @@ from ete3 import Tree
 
 
 # set up the arguments parser to deal with the command line input
-PARSER = argparse.ArgumentParser(description='Rrun expoloratory analyses')
+PARSER = argparse.ArgumentParser(description='Run exploratory analyses')
 PARSER.add_argument('-i', '--mdu_read_IDs', help="One MDU-ID per line.\
                     Put in same folder as run folder.", #need to allow any path
                     required=True)
@@ -63,8 +59,8 @@ PARSER.add_argument('-e', '--email_addresses', help='Email addresses to send\
                     required=True)
 PARSER.add_argument('-j', '--job_number', help='Enter the MDU job number\
                     (no spaces).', required=True)
-PARSER.add_argument('-x', '--excel_metadata', help='Parse excel spreadsheet\
-                    of metadata.', required=True)
+PARSER.add_argument('-x', '--excel_metadata', help='Parse excel spreadsheet of\
+                    metadata to extract MALDI and LIMS data', required=True)
 
 ARGS = PARSER.parse_args()
 
