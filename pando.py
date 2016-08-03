@@ -5,6 +5,10 @@ Run requests on a list of isolate IDs.
 Read in metadata from Excel spreadsheet.
 Add MALDI-ToF results, submit lab, and sp.
 Return a supermatrix of metadata and a tree.
+Metadata includes kraken, abricate, mlst,
+assembly (i.e., contig) metrics and 
+read metrics.
+
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
 YYYMMDD_HHMM: 20160803_1937
