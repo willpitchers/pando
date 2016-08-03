@@ -44,6 +44,6 @@ optional arguments:
   -j JOB_NUMBER, --job_number JOB_NUMBER
                         Enter the MDU job number (no spaces).
   -x EXCEL_METADATA, --excel_metadata EXCEL_METADATA
-                        Parse excel spreadsheet of metadata.
+                        Parse excel spreadsheet of metadata to extract MALDI and LIMS data.
 ```
 
