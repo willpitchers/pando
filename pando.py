@@ -5,12 +5,14 @@ Run requests on a list of isolate IDs.
 Read in metadata from Excel spreadsheet.
 Add MALDI-ToF results, submit lab, and sp.
 Return a supermatrix of metadata and a tree.
+Very specific for MDU folder structures and QC
+(but could be adapted for non-MDU folder structures)
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160803_1937
+YYYMMDD_HHMM: 20160803_2155
 '''
 
-#to do: tIDy formatting, parallelise tasks
+#to do: screen and tidy formatting etc. with pylint
 import os
 import argparse
 import sys
@@ -122,11 +124,9 @@ class Isolate(object):
         Return the read metrics stored in yield.tab QC file.
         '''
         yield_data = [line.rstrip().split('\t') for line in open(ARGS.wgs_qc+self.ID+'/yield.tab').readlines()]
-#         yield_data = yield_data[1:]
         yield_data = dict(('metricsReads_'+i[0], i[1]) for i in yield_data[1:])
         yield_data = pd.DataFrame([yield_data], index=[self.ID])
         return yield_data
-#         pass
 
     def reads(self):
         '''
@@ -320,8 +320,6 @@ def get_isolate_request_IDs(ID_file):
     IDs = filter(None, [ID.rstrip() for ID in open(ID_file, 'r').readlines()])
     return IDs
 
-#Strange place to store them, but need this as a global to categorise isolates
-#as 'new' in the final table of results
 def new_IDs(IDs):
     '''
     Find the new isolate IDs to flag in the final supermatrix of metadata.'
@@ -450,7 +448,6 @@ def main():
     #Drop the path and keep the folder name
     isos = [i.split('/')[-1] for i in iso_paths]
 
-
     #iii) make tempdir to store the temp_contigs there for 'andi' analysis.
     assembly_tempdir = make_tempdir()
 
@@ -458,11 +455,11 @@ def main():
     new_ids = None
     if ARGS.new_IDs != None:
         new_ids = new_IDs(ARGS.new_IDs)
-
+    #v) read in the LIMS metadata
     if ARGS.excel_metadata != None:
         xls_table = excel_metadata(ARGS.excel_metadata)
 
-    #v) Copy contigs to become temp_contigs into tempdir
+    #vi) Copy contigs to become temp_contigs into tempdir
     #Translation dict to store {random 9-character filename: original filename}
     iso_ID_trans = {}
     for iso in isos:
@@ -521,26 +518,26 @@ def main():
         res_k_reads = pd.concat(results_k_reads, axis=0)
         print 'kraken reads results gathered from kraken.tab files...'
 
-        #Multiprocessor retrieval of contig metrics.  Single thread
+        #Multiprocessor retrieval of contig metrics.  Single process
         #per job.
-
         results_metrics_contigs = p.map(metricsContigs_multiprocessing, isos)
         res_m_cntgs = pd.concat(results_metrics_contigs, axis=0)
         print 'contig metrics gathered using \'fa -t\'...'
 
-        #Multiprocessor retrieval of read metrics.  Single thread
+        #Multiprocessor retrieval of read metrics.  Single process
         #per job.
         results_metrics_reads = p.map(metricsReads_multiprocessing, isos)
         res_m_reads = pd.concat(results_metrics_reads, axis=0)
         print 'read metrics gathered from yield.tab files...'
 
-        #Multiprocessor retrieval of abricate results. Single
-        #thread per job.
+        #Multiprocessor retrieval of abricate results. Single process
+        #per job.
         results_abricate = p.map(abricate_multiprocessing, isos)
         res_all_abricate = pd.concat(results_abricate, axis=0)
         res_all_abricate.fillna('.', inplace=True)
         print 'resistome hits gathered from abricate.tab files...'
 
+        #append the dfs to the summary list of dfs
         summary_frames.append(res_k_cntgs)
         summary_frames.append(res_k_reads)
         summary_frames.append(res_m_cntgs)
@@ -551,7 +548,7 @@ def main():
         #(via mulitprocesses above), also replace the dm-matrix short names 
         #with original names
         
-        #Let's store the metedata for each isolate in summary_isos
+        #Let's store the metadata for each isolate in summary_isos
         summary_isos = []
 
         #Let's populate summary_isos above, isolate by isolate (in series)
@@ -602,13 +599,13 @@ def main():
         metadata_overall = pd.concat([summary_isos, summary_frames], axis=1)
         metadata_overall.fillna('.', inplace=True)
         print metadata_overall
-        #Write supermatrix (metadata_overall) to csv and tsv
+        #Write this supermatrix (metadata_overall) to csv and tab/tsv
         csv = base+'_metadataAll.csv'
         tsv = base+'_metadataAll.tab'
         metadata_overall.to_csv(csv, mode='w', index=True, index_label='name')
         metadata_overall.to_csv(tsv, mode='w', sep='\t', index=True, index_label='name')
 
-        #For debugging purposes only, write out tip name tempfile translations
+        #For debugging purposes only, write out tip-name tempfile-name translations
         with open(base+'_tipNamesTranslated.csv', 'w') as tip_names:
             for key, value in iso_ID_trans.items():
                 tip_names.write(key+'\t'+value+'\n')
@@ -620,7 +617,7 @@ def main():
         #Todo: store the temp.tre in a real temp file, not just one called temp.
         Phylo.write(njtree, 'temp.tre', 'newick')
         t = Tree('temp.tre', format=1)
-        #Get rID of negative branch lengths
+        #Get rid of negative branch lengths (an artefact, not an error, of NJ)
         for node in t.traverse():
             node.dist = abs(node.dist)
         t.set_outgroup(t.get_midpoint_outgroup())
@@ -631,7 +628,6 @@ def main():
         print t
         #Remove the temp.tre
         os.remove('temp.tre')
-        #Add an option to import metadata to merge with the output
         #Email the results
         #todo: create a string with %s and populate it
         phandango = 'https://jameshadfield.github.io/phandango/'
