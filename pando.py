@@ -430,12 +430,13 @@ def excel_metadata(xlsx_file):
 def main():
     '''
     Read in the MDU-IDs from file. For each ID, instantiate an object of
-    class Isolate.  This class associates all of the QC data with the ID tag.
-    Move the contigs for all isolates into a tempdir, with a 9-character
+    class Isolate.  This class associates QC data with the ID tag.
+    Move the contigs for all isolates into a tempdir, with a temp 9-character
     filename.  Run andi phylogenomics on all the contig sets.  Infer an NJ tree
     using Bio Phylo from the andi-calculated distance matrix.  Correct the
     negative branch lengths in the NJ tree using ETE2.  Export the tree to file.
-    Export the metadata to file.  Todo: plot the metadata next to tree.'''
+    Gather and combine the metadata for each ID as a super-matrix. Export to file.
+    '''
 
     #i) read in the IDs from file
     IDs = get_isolate_request_IDs(ARGS.mdu_read_IDs)
@@ -495,6 +496,7 @@ def main():
         #summary_frames will store all of the metaDataFrames herein
         summary_frames = []
         n_isos = len(isos)
+        
         #Kraken set at 2 threads, so 36 processes can run on 72 CPUs
         #Create a pool 'p' of size based on number of isolates (n_isos)
         if n_isos <= ARGS.threads//2:
