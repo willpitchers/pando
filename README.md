@@ -7,14 +7,7 @@ With a file of isolate IDs as input, compile all results (abricate, kraken, mlst
 
 ### Get help:
 ```
-python pando.py
-usage: pando.py [-h] -i MDU_READ_IDS [-n NEW_IDS [NEW_IDS ...]] [-w WGS_QC]
-                [-d DELETE_TEMPDIRS] [-t THREADS] [-a ANDI_RUN]
-                [-m MODEL_ANDI_DISTANCE] [-c PERCENT_CUTOFF] -e
-                EMAIL_ADDRESSES [EMAIL_ADDRESSES ...] -j JOB_NUMBER -x
-                EXCEL_METADATA
-pando.py: error: argument -i/--mdu_read_IDs is required
-schultzm@trillian:pando $ python pando.py -h
+python pando.py -h
 usage: pando.py [-h] -i MDU_READ_IDS [-n NEW_IDS [NEW_IDS ...]] [-w WGS_QC]
                 [-d DELETE_TEMPDIRS] [-t THREADS] [-a ANDI_RUN]
                 [-m MODEL_ANDI_DISTANCE] [-c PERCENT_CUTOFF] -e
