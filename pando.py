@@ -605,11 +605,6 @@ def main():
         metadata_overall.to_csv(csv, mode='w', index=True, index_label='name')
         metadata_overall.to_csv(tsv, mode='w', sep='\t', index=True, index_label='name')
 
-        #For debugging purposes only, write out tip-name tempfile-name translations
-        with open(base+'_tipNamesTranslated.csv', 'w') as tip_names:
-            for key, value in iso_ID_trans.items():
-                tip_names.write(key+'\t'+value+'\n')
-                
         #From the distance matrix in dm, infer the NJ tree
         constructor = DistanceTreeConstructor()
         njtree = constructor.nj(dm)
