@@ -62,7 +62,7 @@ PARSER.add_argument('-e', '--email_addresses', help='Email addresses to send\
 PARSER.add_argument('-j', '--job_number', help='Enter the MDU job number\
                     (no spaces).', required=True)
 PARSER.add_argument('-x', '--excel_metadata', help='Parse excel spreadsheet of\
-                    metadata to extract MALDI and LIMS data', required=True)
+                    metadata to extract MALDI and LIMS data', required=False)
 
 ARGS = PARSER.parse_args()
 
