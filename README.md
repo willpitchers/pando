@@ -2,7 +2,7 @@
 # pando
 With a file of isolate IDs as input, compile all results (abricate, kraken, mlst, contig and read metrics, LIMS metadata) into a single super-matrix.  Infer an NJ tree using the alignment-free Andi phylogenomic software.  Receive the tree and results table as an email at the end of the run.  Use a method of choice for displaying the metadata next to the tree (e.g. we recommend [phandango](https://jameshadfield.github.io/phandango/) (web based) and [FigTree](http://tree.bio.ed.ac.uk/software/figtree/) (installed locally on your machine))
 
-### Example run command (can drop the 'time' and 'nice' if desired):
+### Example run command on MDU servers:
 ` time nice python pando.py -i isos.txt -e recipient@unimelb.edu.au -j job_2467 -n 2016-15949 2016-15442 -x CPE_ongoing_20160801.xlsx`
 
 ### Get help:
