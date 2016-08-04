@@ -12,7 +12,7 @@ Github: https://github.com/schultzm
 YYYMMDD_HHMM: 20160803_2155
 '''
 
-#to do: screen and tidy formatting etc. with pylint
+
 import os
 import argparse
 import sys
@@ -37,19 +37,20 @@ PARSER = argparse.ArgumentParser(description='Run exploratory analyses')
 PARSER.add_argument('-i', '--mdu_read_IDs', help="One MDU-ID per line.\
                     Put in same folder as run folder.", #need to allow any path
                     required=True)
-PARSER.add_argument("-n", "--new_IDs", help="Enter IDs (space delimited) that\
-                    you wish to have flagged as 'new' in the final table.",
+PARSER.add_argument('-n', '--new_IDs', help='Enter IDs (space delimited) that\
+                    you wish to \'flag-if-new\' in the final table.',
                     nargs='+', required=False)
-PARSER.add_argument("-w", "--wgs_qc", help="Path to WGS\
-                    QC. Default '/mnt/seq/MDU/QC/'",
-                    default="/mnt/seq/MDU/QC/", required=False)
-PARSER.add_argument("-d", "--delete_tempdirs", help="Delete tempdirs created\
-                    during run? Default = 'yes'.", default='yes', required=False)
-PARSER.add_argument("-t", "--threads", help='Number of threads, default=\'72\'',
-                    default=72, type=int, required=False)
-PARSER.add_argument("-a", "--andi_run", help='Run andi phylogenomic analysis?\
+PARSER.add_argument('-w', '--wgs_qc', help='Path to WGS\
+                    QC. Default \'/mnt/seq/MDU/QC/\'',
+                    default='/mnt/seq/MDU/QC/', required=False)
+PARSER.add_argument('-d', '--delete_tempdirs', help='Delete tempdirs created\
+                    during run? Default = \'yes\'.', default='yes',
+                    required=False)
+PARSER.add_argument("-t", "--threads", help='Number of threads,\
+                    default=\'72\'', default=72, type=int, required=False)
+PARSER.add_argument('-a', '--andi_run', help='Run andi phylogenomic analysis?\
                     Default=\'yes\'', default='yes', required=False)
-PARSER.add_argument("-m", "--model_andi_distance", help='Substitution model.\
+PARSER.add_argument('-m', '--model_andi_distance', help='Substitution model.\
                     \'Raw\', \'JC\', or \'Kimura\'. Default = \'JC\'.',
                     default='JC', required=False)
 PARSER.add_argument('-c', '--percent_cutoff', help='For abricate, call the\
@@ -61,14 +62,17 @@ PARSER.add_argument('-e', '--email_addresses', help='Email addresses to send\
                     required=True)
 PARSER.add_argument('-j', '--job_number', help='Enter the MDU job number\
                     (no spaces).', required=True)
-PARSER.add_argument('-x', '--excel_metadata', help='Parse excel spreadsheet of\
-                    metadata to extract MALDI and LIMS data', required=False)
+PARSER.add_argument('-x', '--excel_spreadsheet', help='Parse excel spreadsheet\
+                    of metadata to extract MALDI and LIMS data',
+                    required=False)
 
 ARGS = PARSER.parse_args()
+
 
 if ARGS.threads > 72:
     print 'Number of requested threads must be less than 72. Exiting now.'
     sys.exit()
+
 
 #Add MLST schemes to force their usage if that species is encountered
 #Only force schemes if there are two (e.g., A baumannii and E coli)
@@ -85,7 +89,9 @@ FORCE_MLST_SCHEME = {"Acinetobacter baumannii": "abaumannii",
 
 class Isolate(object):
     '''
-    An Isolate class takes the sequence ID and associates the data with that ID.
+    An Isolate class takes the sequence ID and associates the data with that
+    ID.
+
         attributes: ID
     '''
 
@@ -110,37 +116,32 @@ class Isolate(object):
         '''
         Return the contig metrics by running 'fa -t'.
         '''
-        os.system('fa -t '+ARGS.wgs_qc+self.ID+'/contigs.fa > '+self.ID+'_metrics.txt')
-        metrics = [line.rstrip().split('\t') for line in open(self.ID+'_metrics.txt').readlines()]
+        os.system('fa -t '+ARGS.wgs_qc+self.ID+'/contigs.fa > '+self.ID+\
+                  '_metrics.txt')
+        metrics = [line.rstrip().split('\t') for line in open(self.ID+\
+                   '_metrics.txt').readlines()]
         metrics = [i[1:] for i in metrics]
         metrics[0] = ['metricsContigs_'+i for i in metrics[0]]
         metrics = dict(zip(metrics[0], metrics[1]))
         os.system('rm '+self.ID+'_metrics.txt')
-        metrics = pd.DataFrame([metrics], index=[self.ID])
-        return metrics
+        metrics_df = pd.DataFrame([metrics], index=[self.ID])
+        return metrics_df
 
     def get_yield(self):
         '''
         Return the read metrics stored in yield.tab QC file.
         '''
-        yield_data = [line.rstrip().split('\t') for line in open(ARGS.wgs_qc+self.ID+'/yield.tab').readlines()]
+        yield_data = [line.rstrip().split('\t') for line in open(ARGS.wgs_qc+\
+                      self.ID+'/yield.tab').readlines()]
         yield_data = dict(('metricsReads_'+i[0], i[1]) for i in yield_data[1:])
-        yield_data = pd.DataFrame([yield_data], index=[self.ID])
-        return yield_data
+        yield_data_df = pd.DataFrame([yield_data], index=[self.ID])
+        return yield_data_df
 
     def reads(self):
         '''
         Store the path to the QCd (trimmomatic-ed and FLASHed) reads.
         '''
         pass
-
-    def shortened_ID(self):
-        '''
-        Create a random 9 character (alphanumeric) tag for use as a tempfile
-        name.
-        '''
-        chars = string.ascii_uppercase + string.digits
-        return ''.join(random.SystemRandom().choice(chars) for _ in range(10))
 
     def abricate_path(self):
         '''
@@ -187,7 +188,8 @@ class Isolate(object):
         the existing mlst.tab.
         '''
         if species in FORCE_MLST_SCHEME:
-            cmd = 'mlst --scheme '+FORCE_MLST_SCHEME[species]+' --quiet '+assembly
+            cmd = 'mlst --scheme '+FORCE_MLST_SCHEME[species]+' --quiet '+\
+                   assembly
             args_mlst = shlex.split(cmd)
             #should write a proc function to do this call as it's used often
             proc = Popen(args_mlst, stdout=PIPE)
@@ -206,8 +208,10 @@ class Isolate(object):
         else:
             mlst_tab = ARGS.wgs_qc+self.ID+'/mlst.tab'
             if os.path.exists(mlst_tab):
-                mlst = [line.rstrip().split('\t') for line in open(mlst_tab).readlines()][0]
-                mlst_formatted_dict = {'MLST_Scheme': mlst[1], 'MLST_ST': mlst[2]}
+                mlst = [line.rstrip().split('\t') for line in
+                        open(mlst_tab).readlines()][0]
+                mlst_formatted_dict = {'MLST_Scheme': mlst[1],
+                                       'MLST_ST': mlst[2]}
                 k = 1
                 for i in range(3, len(mlst)):
                     mlst_formatted_dict['MLST_Locus'+str(k)] = mlst[i]
@@ -219,7 +223,8 @@ class Isolate(object):
                 output = proc.stdout.read()
                 out = output.rstrip().split('\t')[1:]
                 ncol = len(out)
-                mlst_formatted_dict = {'MLST_Scheme': out[0], 'MLST_ST': out[1]}
+                mlst_formatted_dict = {'MLST_Scheme': out[0],
+                                       'MLST_ST': out[1]}
                 k = 1
                 for i in range(3, ncol):
                     mlst_formatted_dict['MLST_Locus'+str(k)] = out[i]
@@ -273,7 +278,8 @@ class Isolate(object):
 
         #Pipe the output of one args to another
         proc1 = Popen(args_kraken, stdout=PIPE)
-        proc2 = Popen(args_krk_report, stdin=proc1.stdout, stdout=PIPE, stderr=PIPE)
+        proc2 = Popen(args_krk_report, stdin=proc1.stdout, stdout=PIPE,
+                      stderr=PIPE)
         proc3 = Popen(args_grep, stdin=proc2.stdout, stdout=PIPE, stderr=PIPE)
         proc4 = Popen(args_sort, stdin=proc3.stdout, stdout=PIPE, stderr=PIPE)
         proc5 = Popen(args_head, stdin=proc4.stdout, stdout=PIPE, stderr=PIPE)
@@ -283,6 +289,14 @@ class Isolate(object):
         kraken = [line.strip().split('\t') for line in filter(None, kraken)]
         return kraken
 
+
+def shortened_ID():
+    '''
+    Create a random 9 character (alphanumeric) tag for use as a tempfile
+    name.
+    '''
+    chars = string.ascii_uppercase + string.digits
+    return ''.join(random.SystemRandom().choice(chars) for _ in range(10))
 
 def make_tempdir():
     '''
@@ -295,21 +309,22 @@ def read_file_lines(file_name):
     '''
     Read in lines of a file, store in a list.
     '''
-    file_contents = [line.rstrip().split() for line in open(file_name).readlines()]
+    file_contents = [line.rstrip().split() for line in
+                     open(file_name).readlines()]
     return file_contents
 
 def lower_tri(full_matrix):
     '''
     Take a symmetrical matrix, convert it to a lower triangle _Matrix object.
     '''
-    lower_tri = []
+    lower_triangle = []
     names = []
     k = 2
     for i in full_matrix:
-        lower_tri.append(map(float, i[1:k]))
+        lower_triangle.append(map(float, i[1:k]))
         names.append(i[0])
         k += 1
-    matrix = _DistanceMatrix(names, lower_tri)
+    matrix = _DistanceMatrix(names, lower_triangle)
     return matrix
 
 def get_isolate_request_IDs(ID_file):
@@ -392,7 +407,8 @@ def kraken_results_df_creator(kraken_hits, rds_or_cntgs):
     dict_hits = {}
     k = 1
     for i in range(0, len(kraken_hits)):
-        dict_hits['sp_krkn'+str(k)+'_'+rds_or_cntgs] = kraken_hits[i][5].lstrip()
+        dict_hits['sp_krkn'+str(k)+'_'+rds_or_cntgs] =\
+                  kraken_hits[i][5].lstrip()
         dict_hits['sp_krkn'+str(k)+'_'+rds_or_cntgs+'_pc'] = kraken_hits[i][0]
         k += 1
     return dict_hits
@@ -425,6 +441,7 @@ def excel_metadata(xlsx_file):
     xlsx = pd.read_excel(xlsx_file, skiprows=4, index_col=0)
     print 'excel spreadsheet:\n'
     print xlsx
+    print ''
     return xlsx
 
 def main():
@@ -434,8 +451,13 @@ def main():
     Move the contigs for all isolates into a tempdir, with a temp 9-character
     filename.  Run andi phylogenomics on all the contig sets.  Infer an NJ tree
     using Bio Phylo from the andi-calculated distance matrix.  Correct the
-    negative branch lengths in the NJ tree using ETE2.  Export the tree to file.
-    Gather and combine the metadata for each ID as a super-matrix. Export to file.
+    negative branch lengths in the NJ tree using ETE2.  Export the tree to
+    file. Gather and combine the metadata for each ID as a super-matrix.
+    Optionally, add LIMS metadata to the super-matrix using the
+    excel_spreadsheet option (adds MALDI-ToF, Submitting Lab ID,
+    Submitting Lab species guess) and/or use the flag-if-new to highlight
+    'new' isolates.  Export the tree and metadata to .csv, .tsv/.tab file.
+    Export the 'isolates not found' to text file too.
     '''
 
     #i) read in the IDs from file
@@ -457,8 +479,8 @@ def main():
     if ARGS.new_IDs != None:
         new_ids = new_IDs(ARGS.new_IDs)
     #v) read in the LIMS metadata
-    if ARGS.excel_metadata != None:
-        xls_table = excel_metadata(ARGS.excel_metadata)
+    if ARGS.excel_spreadsheet != None:
+        xls_table = excel_metadata(ARGS.excel_spreadsheet)
 
     #vi) Copy contigs to become temp_contigs into tempdir
     #Translation dict to store {random 9-character filename: original filename}
@@ -469,10 +491,11 @@ def main():
         #Next, we could just use iso_path+/contigs.fa, but that would skip
         #the if os.path.exists() test in sample.assembly(iso).
         assembly_path = sample.assembly()
-        short_id = sample.shortened_ID()
+        short_id = shortened_ID()
         #Store key,value as original_name,short_id for later retrieval.
         iso_ID_trans[iso] = short_id
-        cmd = 'cp '+assembly_path+' '+assembly_tempdir+'/'+short_id+'_contigs.fa'
+        cmd = 'cp '+assembly_path+' '+assembly_tempdir+'/'+short_id+\
+              '_contigs.fa'
         os.system(cmd)
         print 'Performing copy:', cmd
     with open(base+'_temp_names.txt', 'w') as tmp_names:
@@ -485,7 +508,8 @@ def main():
         #Run andi
         andi_mat = 'andi_'+base+'.mat'
         andi_c = 'nice andi -j -m '+ARGS.model_andi_distance+' -t '+\
-                  str(ARGS.threads)+' '+assembly_tempdir+'/*_contigs.fa > '+andi_mat
+                  str(ARGS.threads)+' '+assembly_tempdir+'/*_contigs.fa > '+\
+                  andi_mat
         print '\nRunning andi with: \''+andi_c+'\''
         os.system(andi_c)
 
@@ -496,7 +520,7 @@ def main():
         #summary_frames will store all of the metaDataFrames herein
         summary_frames = []
         n_isos = len(isos)
-        
+
         #Kraken set at 2 threads, so 36 processes can run on 72 CPUs
         #Create a pool 'p' of size based on number of isolates (n_isos)
         if n_isos <= ARGS.threads//2:
@@ -546,27 +570,36 @@ def main():
         summary_frames.append(res_m_reads)
         summary_frames.append(res_all_abricate)
 
-        #These next steps build up the metadata not yet obtained 
-        #(via mulitprocesses above), also replace the dm-matrix short names 
+        #These next steps build up the metadata not yet obtained
+        #(via mulitprocesses above), also replace the dm-matrix short names
         #with original names
-        
+
         #Let's store the metadata for each isolate in summary_isos
         summary_isos = []
 
         #Let's populate summary_isos above, isolate by isolate (in series)
+        c = 0
         for iso in isos:
             iso_df = []
-            if ARGS.excel_metadata != None:
+            if ARGS.excel_spreadsheet != None:
+                #need to remove the suffixes so as to be able to match LIMS
+                #excel metadata.
                 if '-' in iso:
                     iso_nosuffix = iso.split('-')
                     iso_nosuffix = iso_nosuffix[0]+'-'+iso_nosuffix[1]
                 else:
                     iso_nosuffix = iso
                 submitter = xls_table.loc[iso_nosuffix, 'Submitter']
-                maldi = xls_table.loc[iso_nosuffix, 'Species identification (MALDI-TOF)']
-                sp_id_subm = xls_table.loc[iso_nosuffix, 'Species identification (Subm. lab)']
-                lims = {'sp_LIMS_MALDI-Tof': maldi, 'sp_LIMS_SubmLab': sp_id_subm, 'LIMS_Submitter': submitter}
+                maldi = xls_table.loc[iso_nosuffix,
+                                      'Species identification (MALDI-TOF)']
+                sp_id_subm = xls_table.loc[iso_nosuffix,
+                                           'Species identification (Subm. lab)']
+                lims = {'sp_LIMS_MALDI-Tof': maldi, 'sp_LIMS_SubmLab':
+                        sp_id_subm, 'LIMS_Submitter': submitter}
                 lims_df = pd.DataFrame([lims], index=[iso])
+                while c < 1:
+                    print 'LIMS metadata added to collection...'
+                    c += 1
                 iso_df.append(lims_df)
             sample = Isolate(iso)
             short_id = iso_ID_trans[iso]
@@ -584,34 +617,38 @@ def main():
             if new_ids != None:
                 if iso in new_ids:
                     new_iso = {'0_new':'yes'}
-                    new_iso = pd.DataFrame([new_iso], index=[iso])
-                    iso_df.append(new_iso)
-            iso_df = pd.concat(iso_df, axis=1)
-            summary_isos.append(iso_df)
+                    new_iso_df = pd.DataFrame([new_iso], index=[iso])
+                    iso_df.append(new_iso_df)
+            iso_df_pd = pd.concat(iso_df, axis=1)
+            summary_isos.append(iso_df_pd)
             #Correct the names in the matrix
             for i in range(0, len(dm.names)):
                 #iso_ID_trans[iso] is the short_id
                 if dm.names[i] == iso_ID_trans[iso]:
                     dm.names[i] = iso
-        #Glue the isolate by isolate metadata into a single df 
-        summary_isos = pd.concat(summary_isos)
+        print 'Remaining isolate data gathered (mlst, species consensus,'+\
+              ' flag-if-new)...\n'
+        #Glue the isolate by isolate metadata into a single df
+        summary_isos_df = pd.concat(summary_isos)
         #Glue the dataframes built during multiprocessing processes
-        summary_frames = pd.concat(summary_frames, axis=1)
+        summary_frames_df = pd.concat(summary_frames, axis=1)
         #Finish up with everything in one table!
-        metadata_overall = pd.concat([summary_isos, summary_frames], axis=1)
+        metadata_overall = pd.concat([summary_isos_df, summary_frames_df],
+                                     axis=1)
         metadata_overall.fillna('.', inplace=True)
         print metadata_overall
         #Write this supermatrix (metadata_overall) to csv and tab/tsv
         csv = base+'_metadataAll.csv'
         tsv = base+'_metadataAll.tab'
         metadata_overall.to_csv(csv, mode='w', index=True, index_label='name')
-        metadata_overall.to_csv(tsv, mode='w', sep='\t', index=True, index_label='name')
-
+        metadata_overall.to_csv(tsv, mode='w', sep='\t', index=True,
+                                index_label='name')
+        print '\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
+              ' isolates written to '+csv+' and '+tsv+'...'
         #From the distance matrix in dm, infer the NJ tree
         constructor = DistanceTreeConstructor()
         njtree = constructor.nj(dm)
         njtree.rooted = True
-        #Todo: store the temp.tre in a real temp file, not just one called temp.
         Phylo.write(njtree, 'temp.tre', 'newick')
         t = Tree('temp.tre', format=1)
         #Get rid of negative branch lengths (an artefact, not an error, of NJ)
@@ -619,26 +656,28 @@ def main():
             node.dist = abs(node.dist)
         t.set_outgroup(t.get_midpoint_outgroup())
         t_out = base+'_andi'+ARGS.model_andi_distance+'_distNJ.nwk.tre'
-        print '\nWriting tree to '+t_out
         t.write(format=1, outfile=t_out)
+        print '\nWritten tree to '+t_out+', which looks like this:'
         #Print the ascii tree
         print t
         #Remove the temp.tre
         os.remove('temp.tre')
         #Email the results
-        #todo: create a string with %s and populate it
         phandango = 'https://jameshadfield.github.io/phandango/'
         cmd_mail = 'mail -s \''+ARGS.job_number+'\' -a '+t_out+' -a '+\
-            csv+' -a '+tsv+' -a '+base+'_not_found.txt '+','.join(ARGS.email_addresses)+' <<< \'Hi,\
-            \n\nPlease find attached the results for job '+\
-            ARGS.job_number+'. To view the results, open '+phandango+\
-            ' and then simply drag and drop the attached .tre and .csv files'+\
-            ' into that window.  Alternatively, load the .tre in FigTree and' +\
-            'import the annotations in the .tab file.\n\nGood luck with your' +\
-            ' investigations,\n\nPando.\''
-#             print cmd_mail
+            csv+' -a '+tsv+' -a '+base+'_not_found.txt '+\
+            ','.join(ARGS.email_addresses)+' <<< \'Hi,'+\
+            '\n\nPlease find attached the results for job '+\
+            ARGS.job_number+'. To view the results, open \''+phandango+\
+            '\' and then simply drag and drop the attached .tre and .csv'+\
+            ' files into that window.  Alternatively, load the .tre in'+\
+            ' FigTree and import the annotations in the .tab file.\n\nGood'+\
+            ' luck with your investigations,\n\nPando.\''
         os.system(cmd_mail)
         print '\nResults sent via email.'
+        print 'Explore your results with phandango and FigTree.'
+        print 'https://jameshadfield.github.io/phandango/'
+        print 'http://tree.bio.ed.ac.uk/software/figtree/'
 
     #Delete the tempdirs created during the run
     if 'y' in ARGS.delete_tempdirs.lower():
@@ -646,6 +685,9 @@ def main():
         print '\nDeleted tempdir '+assembly_tempdir+'\nFinished.\n'
     else:
         print '\nTempdir not deleted.\nFinished.\n'
+    print 'Thanks for using pando.\nContact the author at'+\
+          ' mark.schultz@unimelb.edu.au'
+
 
 if __name__ == '__main__':
     main()
