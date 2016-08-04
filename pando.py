@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+
 '''
 Run requests on a list of isolate IDs.
 Read in metadata from Excel spreadsheet.
@@ -32,8 +33,11 @@ import pandas as pd
 from ete3 import Tree
 
 
+VERSION = 'pando version 1.1'
+
+
 # set up the arguments parser to deal with the command line input
-PARSER = argparse.ArgumentParser(description='Run exploratory analyses')
+PARSER = argparse.ArgumentParser(description='Run exploratory analyses.')
 PARSER.add_argument('-i', '--mdu_read_IDs', help="One MDU-ID per line.\
                     Put in same folder as run folder.", #need to allow any path
                     required=True)
@@ -41,29 +45,34 @@ PARSER.add_argument('-n', '--new_IDs', help='Enter IDs (space delimited) that\
                     you wish to \'flag-if-new\' in the final table.',
                     nargs='+', required=False)
 PARSER.add_argument('-w', '--wgs_qc', help='Path to WGS\
-                    QC. Default \'/mnt/seq/MDU/QC/\'',
+                    QC. Default=\'/mnt/seq/MDU/QC/\'',
                     default='/mnt/seq/MDU/QC/', required=False)
 PARSER.add_argument('-d', '--delete_tempdirs', help='Delete tempdirs created\
-                    during run? Default = \'yes\'.', default='yes',
+                    during run? Default=\'yes\'.', default='yes',
                     required=False)
 PARSER.add_argument("-t", "--threads", help='Number of threads,\
                     default=\'72\'', default=72, type=int, required=False)
 PARSER.add_argument('-a', '--andi_run', help='Run andi phylogenomic analysis?\
                     Default=\'yes\'', default='yes', required=False)
 PARSER.add_argument('-m', '--model_andi_distance', help='Substitution model.\
-                    \'Raw\', \'JC\', or \'Kimura\'. Default = \'JC\'.',
+                    \'Raw\', \'JC\', or \'Kimura\'. Default=\'JC\'.',
                     default='JC', required=False)
 PARSER.add_argument('-c', '--percent_cutoff', help='For abricate, call the\
                     gene \'present\' if greater than this value and \'maybe\'\
-                    if less than this value. Default = 95. NB: 100 percent = \
+                    if less than this value. Default=95. NB: 100 percent=\
                     \'100\', not \'1\'.', default=95, type=int, required=False)
 PARSER.add_argument('-e', '--email_addresses', help='Email addresses to send\
                     results (comma or space delimited)', nargs='+',
-                    required=True)
+                    required=False)
 PARSER.add_argument('-j', '--job_number', help='Enter the MDU job number\
-                    (no spaces).', required=True)
+                    (no spaces).', default='pando', required=False)
 PARSER.add_argument('-x', '--excel_spreadsheet', help='Parse excel spreadsheet\
-                    of metadata to extract MALDI and LIMS data',
+                    of metadata (.xlsx format)to extract LIMS data.\
+                    The data must start on line 5 (1-based indexing, as per\
+                    Excel line numbers), which is default for LIMS, and\
+                    contain columns with the labels \'MDU sample ID\',\
+                    \'Species identification (MALDI-TOF)\',\
+                    \'Species identification (Subm. lab)\' and \'Submitter\'.',
                     required=False)
 
 ARGS = PARSER.parse_args()
@@ -72,6 +81,8 @@ ARGS = PARSER.parse_args()
 if ARGS.threads > 72:
     print 'Number of requested threads must be less than 72. Exiting now.'
     sys.exit()
+print '\nStarting '+VERSION+'...'
+print str(ARGS.threads) +' CPU processes requested.'
 
 
 #Add MLST schemes to force their usage if that species is encountered
@@ -229,7 +240,6 @@ class Isolate(object):
                 for i in range(3, ncol):
                     mlst_formatted_dict['MLST_Locus'+str(k)] = out[i]
                     k += 1
-
         mlst_results = pd.DataFrame([mlst_formatted_dict], index=[self.ID])
         return mlst_results
 
@@ -439,7 +449,7 @@ def excel_metadata(xlsx_file):
     Read in an excel spreadsheet.
     '''
     xlsx = pd.read_excel(xlsx_file, skiprows=4, index_col=0)
-    print 'excel spreadsheet:\n'
+    print 'Excel spreadsheet:\n'
     print xlsx
     print ''
     return xlsx
@@ -451,13 +461,14 @@ def main():
     Move the contigs for all isolates into a tempdir, with a temp 9-character
     filename.  Run andi phylogenomics on all the contig sets.  Infer an NJ tree
     using Bio Phylo from the andi-calculated distance matrix.  Correct the
-    negative branch lengths in the NJ tree using ETE2.  Export the tree to
+    negative branch lengths in the NJ tree using ETE3.  Export the tree to
     file. Gather and combine the metadata for each ID as a super-matrix.
-    Optionally, add LIMS metadata to the super-matrix using the
-    excel_spreadsheet option (adds MALDI-ToF, Submitting Lab ID,
-    Submitting Lab species guess) and/or use the flag-if-new to highlight
+    Optionally, add LIMS metadata to the super-matrix from a LIMS excel
+    spreadsheet option (adds MALDI-ToF, Submitting Lab ID, Submitting Lab 
+    species guess) and/or use the flag-if-new to highlight
     'new' isolates.  Export the tree and metadata to .csv, .tsv/.tab file.
-    Export the 'isolates not found' to text file too.
+    Export the 'isolates not found' to text file too.  Optionally, email the 
+    results.  
     '''
 
     #i) read in the IDs from file
@@ -506,7 +517,7 @@ def main():
 
     if 'y' in ARGS.andi_run.lower():
         #Run andi
-        andi_mat = 'andi_'+base+'.mat'
+        andi_mat = 'andi_'+ARGS.model_andi_distance+'dist_'+base+'.mat'
         andi_c = 'nice andi -j -m '+ARGS.model_andi_distance+' -t '+\
                   str(ARGS.threads)+' '+assembly_tempdir+'/*_contigs.fa > '+\
                   andi_mat
@@ -527,11 +538,11 @@ def main():
             p = Pool(n_isos)
         else:
             p = Pool(ARGS.threads//2)
-        print '\nRunning kraken on the assemblies (contigs):'
+        print '\nRunning kraken on the assemblies (SPAdes contigs.fa files):'
         results_k_cntgs = p.map(kraken_contigs_multiprocessing, isos)
         #concat the dataframe objects
         res_k_cntgs = pd.concat(results_k_cntgs, axis=0)
-        print '\nkraken contigs results gathered from kraken on contigs...'
+        print '\nKraken_contigs results gathered from kraken on contigs...'
 
         #Multiprocessor retrieval of kraken results on reads.  Single thread
         #per job.
@@ -542,26 +553,26 @@ def main():
         results_k_reads = p.map(kraken_reads_multiprocessing, isos)
         #concat the dataframe objects
         res_k_reads = pd.concat(results_k_reads, axis=0)
-        print 'kraken reads results gathered from kraken.tab files...'
+        print 'Kraken_reads results gathered from kraken.tab files...'
 
         #Multiprocessor retrieval of contig metrics.  Single process
         #per job.
         results_metrics_contigs = p.map(metricsContigs_multiprocessing, isos)
         res_m_cntgs = pd.concat(results_metrics_contigs, axis=0)
-        print 'contig metrics gathered using \'fa -t\'...'
+        print 'Contig metrics gathered using \'fa -t\'...'
 
         #Multiprocessor retrieval of read metrics.  Single process
         #per job.
         results_metrics_reads = p.map(metricsReads_multiprocessing, isos)
         res_m_reads = pd.concat(results_metrics_reads, axis=0)
-        print 'read metrics gathered from yield.tab files...'
+        print 'Read metrics gathered from yield.tab files...'
 
         #Multiprocessor retrieval of abricate results. Single process
         #per job.
         results_abricate = p.map(abricate_multiprocessing, isos)
         res_all_abricate = pd.concat(results_abricate, axis=0)
         res_all_abricate.fillna('.', inplace=True)
-        print 'resistome hits gathered from abricate.tab files...'
+        print 'Resistome hits gathered from abricate.tab files...'
 
         #append the dfs to the summary list of dfs
         summary_frames.append(res_k_cntgs)
@@ -627,7 +638,7 @@ def main():
                 if dm.names[i] == iso_ID_trans[iso]:
                     dm.names[i] = iso
         print 'Remaining isolate data gathered (mlst, species consensus,'+\
-              ' flag-if-new)...\n'
+              ' flag-if-new)...'
         #Glue the isolate by isolate metadata into a single df
         summary_isos_df = pd.concat(summary_isos)
         #Glue the dataframes built during multiprocessing processes
@@ -636,6 +647,7 @@ def main():
         metadata_overall = pd.concat([summary_isos_df, summary_frames_df],
                                      axis=1)
         metadata_overall.fillna('.', inplace=True)
+        print '\nMetadata super-matrix:'
         print metadata_overall
         #Write this supermatrix (metadata_overall) to csv and tab/tsv
         csv = base+'_metadataAll.csv'
@@ -643,8 +655,6 @@ def main():
         metadata_overall.to_csv(csv, mode='w', index=True, index_label='name')
         metadata_overall.to_csv(tsv, mode='w', sep='\t', index=True,
                                 index_label='name')
-        print '\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
-              ' isolates written to '+csv+' and '+tsv+'...'
         #From the distance matrix in dm, infer the NJ tree
         constructor = DistanceTreeConstructor()
         njtree = constructor.nj(dm)
@@ -655,38 +665,48 @@ def main():
         for node in t.traverse():
             node.dist = abs(node.dist)
         t.set_outgroup(t.get_midpoint_outgroup())
-        t_out = base+'_andi'+ARGS.model_andi_distance+'_distNJ.nwk.tre'
+        t_out = base+'_andi_NJ_'+ARGS.model_andi_distance+'dist.nwk.tre'
         t.write(format=1, outfile=t_out)
-        print '\nWritten tree to '+t_out+', which looks like this:'
+        print 'Final tree (midpoint-rooted, NJ under '+\
+               ARGS.model_andi_distance+' distance) looks like this:'
         #Print the ascii tree
         print t
         #Remove the temp.tre
         os.remove('temp.tre')
         #Email the results
-        phandango = 'https://jameshadfield.github.io/phandango/'
-        cmd_mail = 'mail -s \''+ARGS.job_number+'\' -a '+t_out+' -a '+\
-            csv+' -a '+tsv+' -a '+base+'_not_found.txt '+\
-            ','.join(ARGS.email_addresses)+' <<< \'Hi,'+\
-            '\n\nPlease find attached the results for job '+\
-            ARGS.job_number+'. To view the results, open \''+phandango+\
-            '\' and then simply drag and drop the attached .tre and .csv'+\
-            ' files into that window.  Alternatively, load the .tre in'+\
-            ' FigTree and import the annotations in the .tab file.\n\nGood'+\
-            ' luck with your investigations,\n\nPando.\''
-        os.system(cmd_mail)
-        print '\nResults sent via email.'
-        print 'Explore your results with phandango and FigTree.'
-        print 'https://jameshadfield.github.io/phandango/'
-        print 'http://tree.bio.ed.ac.uk/software/figtree/'
+        if ARGS.email_addresses != None:
+            phandango = 'https://jameshadfield.github.io/phandango/'
+            cmd_mail = 'mail -s \''+ARGS.job_number+'\' -a '+t_out+' -a '+\
+                csv+' -a '+tsv+' -a '+base+'_not_found.txt '+\
+                ','.join(ARGS.email_addresses)+' <<< \'Hi,'+\
+                '\n\nPlease find attached the results for job '+\
+                ARGS.job_number+'. To view the results, open \''+phandango+\
+                '\' and then simply drag and drop the attached .tre and .csv'+\
+                ' files into that window.  Alternatively, load the .tre in'+\
+                ' FigTree and import the annotations in the .tab file.'+\
+                '\n\nGood luck with your investigations,\n\nPando.\''
+            os.system(cmd_mail)
+            print '\nResults sent via email.'
 
     #Delete the tempdirs created during the run
     if 'y' in ARGS.delete_tempdirs.lower():
         shutil.rmtree(assembly_tempdir, ignore_errors=True)
-        print '\nDeleted tempdir '+assembly_tempdir+'\nFinished.\n'
+        print '\nDeleted tempdir '+assembly_tempdir+'.'
     else:
-        print '\nTempdir not deleted.\nFinished.\n'
-    print 'Thanks for using pando.\nContact the author at'+\
-          ' mark.schultz@unimelb.edu.au'
+        print '\nTempdir '+assembly_tempdir+' not deleted.'
+
+    print '\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
+          ' isolates written to '+csv+' and '+tsv+'.'
+    print 'Tree (NJ under '+ARGS.model_andi_distance+' distance, midpoint'+\
+          '-rooted) written to '+t_out+'.'
+
+
+    print '\nRun finished.'
+    print '\nExplore your results with phandango and FigTree.'
+    print 'https://jameshadfield.github.io/phandango/'
+    print 'http://tree.bio.ed.ac.uk/software/figtree/'
+    print '\nContact the author at mark.schultz@unimelb.edu.au'
+    print 'Thanks for using \''+VERSION+'\'.\n'
 
 
 if __name__ == '__main__':
