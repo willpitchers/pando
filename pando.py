@@ -10,7 +10,7 @@ Very specific for MDU folder structures and QC
 (but could be adapted for non-MDU folder structures)
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160803_2155
+YYYMMDD_HHMM: 20160804_1351
 '''
 
 
