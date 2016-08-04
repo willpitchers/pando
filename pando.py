@@ -38,8 +38,8 @@ VERSION = 'pando version 1.1'
 
 # set up the arguments parser to deal with the command line input
 PARSER = argparse.ArgumentParser(description='Run exploratory analyses.')
-PARSER.add_argument('-i', '--mdu_read_IDs', help="One MDU-ID per line.\
-                    Put in same folder as run folder.", #need to allow any path
+PARSER.add_argument('-i', '--mdu_read_IDs', help="One MDU-ID per line\
+                    (required). Put in same folder as run folder.", #any path?
                     required=True)
 PARSER.add_argument('-n', '--new_IDs', help='Enter IDs (space delimited) that\
                     you wish to \'flag-if-new\' in the final table.',
@@ -65,7 +65,8 @@ PARSER.add_argument('-e', '--email_addresses', help='Email addresses to send\
                     results (comma or space delimited)', nargs='+',
                     required=False)
 PARSER.add_argument('-j', '--job_number', help='Enter the MDU job number\
-                    (no spaces).', default='pando', required=False)
+                    (no spaces; default=\'pando\').', default='pando',
+                    required=False)
 PARSER.add_argument('-x', '--excel_spreadsheet', help='Parse excel spreadsheet\
                     of metadata (.xlsx format)to extract LIMS data.\
                     The data must start on line 5 (1-based indexing, as per\
