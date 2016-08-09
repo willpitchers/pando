@@ -1,6 +1,6 @@
 ![pando](http://upliftconnect.com/wp-content/uploads/2016/03/pando-trees-1.jpg)
 # pando
-With a file of isolate IDs as input, compile all results (abricate, kraken, mlst, contig and read metrics, LIMS metadata) into a single super-matrix.  Infer an NJ tree using the alignment-free Andi phylogenomic software.  Receive the tree and results table as an email at the end of the run.  Use a method of choice for displaying the metadata next to the tree (e.g. we recommend [phandango](https://jameshadfield.github.io/phandango/) (web based) and [FigTree](http://tree.bio.ed.ac.uk/software/figtree/) (installed locally on your machine))
+With a file of isolate IDs as input, compile all results (abricate, kraken, mlst, contig and read metrics, LIMS metadata) into a single super-matrix.  Infer an NJ tree using the alignment-free Andi phylogenomic software.  Receive the tree and results table as an email at the end of the run.  Use a method of choice for displaying the metadata next to the tree (e.g. we recommend [phandango](https://jameshadfield.github.io/phandango/) (web based) and [FigTree](http://tree.bio.ed.ac.uk/software/figtree/) (installed locally on your machine)).  Can Use it to run roary too.  Can switch on/off roary or andi or both.  
 
 ### Example run command on MDU servers:
 `time nice python pando.py -i file_of_mdu-isolate_IDs.txt -e recipient@unimelb.edu.au -j job_2467 -n 2016-15949 2016-15442 -x CPE_ongoing_20160801.xlsx`
@@ -12,7 +12,7 @@ With a file of isolate IDs as input, compile all results (abricate, kraken, mlst
 ```
 python pando.py -h
 usage: pando.py [-h] -i MDU_READ_IDS [-n NEW_IDS [NEW_IDS ...]] [-w WGS_QC]
-                [-d DELETE_TEMPDIRS] [-t THREADS] [-a ANDI_RUN]
+                [-d DELETE_TEMPDIRS] [-t THREADS] [-a ANDI_RUN] [-r ROARY_RUN]
                 [-m MODEL_ANDI_DISTANCE] [-c PERCENT_CUTOFF]
                 [-e EMAIL_ADDRESSES [EMAIL_ADDRESSES ...]] [-j JOB_NUMBER]
                 [-x EXCEL_SPREADSHEET]
@@ -35,6 +35,8 @@ optional arguments:
                         Number of threads, default='72'
   -a ANDI_RUN, --andi_run ANDI_RUN
                         Run andi phylogenomic analysis? Default='yes'
+  -r ROARY_RUN, --roary_run ROARY_RUN
+                        Run roary pangenome analysis? Default='yes'
   -m MODEL_ANDI_DISTANCE, --model_andi_distance MODEL_ANDI_DISTANCE
                         Substitution model. 'Raw', 'JC', or 'Kimura'.
                         Default='JC'.
