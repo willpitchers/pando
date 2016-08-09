@@ -54,6 +54,8 @@ PARSER.add_argument("-t", "--threads", help='Number of threads,\
                     default=\'72\'', default=72, type=int, required=False)
 PARSER.add_argument('-a', '--andi_run', help='Run andi phylogenomic analysis?\
                     Default=\'yes\'', default='yes', required=False)
+PARSER.add_argument('-r', '--roary_run', help='Run roary pangenome analysis?\
+                    Default=\'yes\'', default='yes', required=False)
 PARSER.add_argument('-m', '--model_andi_distance', help='Substitution model.\
                     \'Raw\', \'JC\', or \'Kimura\'. Default=\'JC\'.',
                     default='JC', required=False)
@@ -300,6 +302,12 @@ class Isolate(object):
         kraken = [line.strip().split('\t') for line in filter(None, kraken)]
         return kraken
 
+    def prokka_contigs(self):
+        cmd = 'prokka --centre X --compliant --locustag '+self.ID+\
+              ' --prefix '+self.ID+' --fast --quiet --outdir %s/'+self.ID+\
+              ' --cpus 2 --norrna --notrna --force '+ self.assembly()
+        return cmd
+
 
 def shortened_ID():
     '''
@@ -455,6 +463,24 @@ def excel_metadata(xlsx_file):
     print ''
     return xlsx
 
+def prokka(params):
+    '''
+    Run prokka on the isolate. Unpack params to get iso and assembly_tempdir.
+    '''
+    (x,y)=params
+    ID = Isolate(x)
+    cmd = ID.prokka_contigs() % y
+    print cmd
+    os.system(cmd)
+
+def roary(base):
+    ''''
+    Run roary on the gff files output by prokka.
+    '''
+    cmd = 'roary -v -f '+base+'_roary -p '+str(ARGS.threads)+' '+\
+          base+'_prokka/*/*.gff'
+    os.system(cmd)
+
 def main():
     '''
     Read in the MDU-IDs from file. For each ID, instantiate an object of
@@ -516,6 +542,38 @@ def main():
             print value+'\t'+key
             tmp_names.write(value+'\t'+key+'\n')
 
+    #Run roary?
+    if 'y' in ARGS.roary_run.lower():
+        n_isos = len(isos)
+        if n_isos <= ARGS.threads//2:
+            p = Pool(n_isos)
+        else:
+            p = Pool(ARGS.threads//2)
+        print '\nRunning prokka:'
+        params = [(i, base+'_prokka') for i in isos]
+        p.map(prokka, params)
+        print '\nRunning roary:'
+        roary(base)
+        roary_genes = pd.read_table(base+'_roary/gene_presence_absence.Rtab',
+                                    index_col=0, header=0)
+        roary_genes = roary_genes.transpose()
+        roary_genes.to_csv(base+'_roary/gene_presence_absence.Ltab.csv',
+                           mode='w', index=True, index_label='name')
+        t = Tree(base+'_roary/accessory_binary_genes.fa.newick', format=1)
+        #Get rid of negative branch lengths (an artefact, not an error, of NJ)
+        for node in t.traverse():
+            node.dist = abs(node.dist)
+        t.set_outgroup(t.get_midpoint_outgroup())
+        t_out = base+'_roary/accessory_binary_genes_midpoint.nwk.tre'
+        t.write(format=1, outfile=t_out)
+        print '\nWritten midpoint-rooted roary tree.'
+        cmd = 'python roary_plots.py --labels --format pdf '+\
+              base+'_roary/accessory_binary_genes_midpoint.nwk.tre '+\
+              base+'_roary/gene_presence_absence.csv'
+        os.system(cmd)
+        print '\nWritten pdf files of roary outputs.'
+
+    #Run andi?
     if 'y' in ARGS.andi_run.lower():
         #Run andi
         andi_mat = 'andi_'+ARGS.model_andi_distance+'dist_'+base+'.mat'
