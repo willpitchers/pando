@@ -6,11 +6,11 @@ Run requests on a list of isolate IDs.
 Read in metadata from Excel spreadsheet.
 Add MALDI-ToF results, submit lab, and sp.
 Return a supermatrix of metadata and a tree.
-Very specific for MDU folder structures and QC
+Specific for MDU folder structures and QC
 (but could be adapted for non-MDU folder structures)
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160804_1351
+YYYMMDD_HHMM: 20160811_1115
 '''
 
 
@@ -33,7 +33,7 @@ import pandas as pd
 from ete3 import Tree
 
 
-VERSION = 'pando version 1.3'
+VERSION = 'pando version 1.3.1'
 
 
 # set up the arguments parser to deal with the command line input
@@ -736,9 +736,11 @@ def main():
         #Write this supermatrix (metadata_overall) to csv and tab/tsv
         csv = base+'_metadataAll.csv'
         tsv = base+'_metadataAll.tab'
+        json = base+'_metadataAll.json'
         metadata_overall.to_csv(csv, mode='w', index=True, index_label='name')
         metadata_overall.to_csv(tsv, mode='w', sep='\t', index=True,
                                 index_label='name')
+        metadata_overall.to_json(json)
         #Email the results
         if ARGS.email_addresses != None:
             phandango = 'https://jameshadfield.github.io/phandango/'
