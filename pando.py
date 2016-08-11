@@ -33,7 +33,7 @@ import pandas as pd
 from ete3 import Tree
 
 
-VERSION = 'pando version 1.1'
+VERSION = 'pando version 1.2'
 
 
 # set up the arguments parser to deal with the command line input
@@ -520,27 +520,29 @@ def main():
     if ARGS.excel_spreadsheet != None:
         xls_table = excel_metadata(ARGS.excel_spreadsheet)
 
-    #vi) Copy contigs to become temp_contigs into tempdir
+    #vi) Copy contigs to become temp_contigs into tempdir, only if andi 
+    #requested.
     #Translation dict to store {random 9-character filename: original filename}
-    iso_ID_trans = {}
-    for iso in isos:
-        #Instantiate an Isolate class for each isolate in isolates
-        sample = Isolate(iso)
-        #Next, we could just use iso_path+/contigs.fa, but that would skip
-        #the if os.path.exists() test in sample.assembly(iso).
-        assembly_path = sample.assembly()
-        short_id = shortened_ID()
-        #Store key,value as original_name,short_id for later retrieval.
-        iso_ID_trans[iso] = short_id
-        cmd = 'cp '+assembly_path+' '+assembly_tempdir+'/'+short_id+\
-              '_contigs.fa'
-        os.system(cmd)
-        print 'Performing copy:', cmd
-    with open(base+'_temp_names.txt', 'w') as tmp_names:
-        print '\nTranslated isolate IDs:\nShort\tOriginal'
-        for key, value in iso_ID_trans.items():
-            print value+'\t'+key
-            tmp_names.write(value+'\t'+key+'\n')
+    if 'y' in ARGS.andi_run.lower():
+        iso_ID_trans = {}
+        for iso in isos:
+            #Instantiate an Isolate class for each isolate in isolates
+            sample = Isolate(iso)
+            #Next, we could just use iso_path+/contigs.fa, but that would skip
+            #the if os.path.exists() test in sample.assembly(iso).
+            assembly_path = sample.assembly()
+            short_id = shortened_ID()
+            #Store key,value as original_name,short_id for later retrieval.
+            iso_ID_trans[iso] = short_id
+            cmd = 'cp '+assembly_path+' '+assembly_tempdir+'/'+short_id+\
+                  '_contigs.fa'
+            os.system(cmd)
+            print 'Performing copy:', cmd
+        with open(base+'_temp_names.txt', 'w') as tmp_names:
+            print '\nTranslated isolate IDs:\nShort\tOriginal'
+            for key, value in iso_ID_trans.items():
+                print value+'\t'+key
+                tmp_names.write(value+'\t'+key+'\n')
 
     #Run roary?
     if 'y' in ARGS.roary_run.lower():
@@ -549,9 +551,13 @@ def main():
             p = Pool(n_isos)
         else:
             p = Pool(ARGS.threads//2)
-        print '\nRunning prokka:'
-        params = [(i, base+'_prokka') for i in isos]
-        p.map(prokka, params)
+        params = [(i, 'prokka') for i in isos if not
+                  os.path.exists('prokka/'+i)]
+        if len(params) > 0:
+            print '\nRunning prokka:'
+            p.map(prokka, params)
+        else:
+            print '\nProkka files already exist. Moving on to roary analysis.'
         print '\nRunning roary:'
         roary(base)
         roary_genes = pd.read_table(base+'_roary/gene_presence_absence.Rtab',
@@ -567,11 +573,6 @@ def main():
         t_out = base+'_roary/accessory_binary_genes_midpoint.nwk.tre'
         t.write(format=1, outfile=t_out)
         print '\nWritten midpoint-rooted roary tree.'
-        cmd = 'python roary_plots.py --labels --format pdf '+\
-              base+'_roary/accessory_binary_genes_midpoint.nwk.tre '+\
-              base+'_roary/gene_presence_absence.csv'
-        os.system(cmd)
-        print '\nWritten pdf files of roary outputs.'
 
     #Run andi?
     if 'y' in ARGS.andi_run.lower():
@@ -753,11 +754,11 @@ def main():
         print '\nDeleted tempdir '+assembly_tempdir+'.'
     else:
         print '\nTempdir '+assembly_tempdir+' not deleted.'
-
-    print '\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
-          ' isolates written to '+csv+' and '+tsv+'.'
-    print 'Tree (NJ under '+ARGS.model_andi_distance+' distance, midpoint'+\
-          '-rooted) written to '+t_out+'.'
+    if 'y' in ARGS.andi_run.lower():
+        print '\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
+              ' isolates written to '+csv+' and '+tsv+'.'
+        print 'Tree (NJ under '+ARGS.model_andi_distance+' distance, midpoint'+\
+              '-rooted) written to '+t_out+'.'
 
 
     print '\nRun finished.'
