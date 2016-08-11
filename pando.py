@@ -535,17 +535,17 @@ def main():
         short_id = shortened_ID()
         #Store key,value as original_name,short_id for later retrieval.
         iso_ID_trans[iso] = short_id
+        if 'y' in ARGS.andi_run.lower():
+            cmd = 'cp '+assembly_path+' '+assembly_tempdir+'/'+short_id+\
+                  '_contigs.fa'
+            os.system(cmd)
+            print 'Performing copy:', cmd
+
     with open(base+'_temp_names.txt', 'w') as tmp_names:
         print '\nTranslated isolate IDs:\nShort\tOriginal'
         for key, value in iso_ID_trans.items():
             print value+'\t'+key
             tmp_names.write(value+'\t'+key+'\n')
-
-    if 'y' in ARGS.andi_run.lower():
-        cmd = 'cp '+assembly_path+' '+assembly_tempdir+'/'+short_id+\
-              '_contigs.fa'
-        os.system(cmd)
-        print 'Performing copy:', cmd
 
     #Run roary?
     if 'y' in ARGS.roary_run.lower():
@@ -615,6 +615,8 @@ def main():
         print t
         #Remove the temp.tre
         os.remove('temp.tre')
+        print 'Tree (NJ under '+ARGS.model_andi_distance+\
+              ' distance, midpoint -rooted) written to '+t_out+'.'
 
     if 'y' in ARGS.metadata_run.lower():
        #summary_frames will store all of the metaDataFrames herein
@@ -741,6 +743,9 @@ def main():
         metadata_overall.to_csv(tsv, mode='w', sep='\t', index=True,
                                 index_label='name')
         metadata_overall.to_json(json)
+        print '\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
+              ' isolates written to '+csv+' and '+tsv+'.'
+
         #Email the results
         if ARGS.email_addresses != None:
             phandango = 'https://jameshadfield.github.io/phandango/'
@@ -762,12 +767,6 @@ def main():
         print '\nDeleted tempdir '+assembly_tempdir+'.'
     else:
         print '\nTempdir '+assembly_tempdir+' not deleted.'
-    if 'y' in ARGS.andi_run.lower():
-        print '\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
-              ' isolates written to '+csv+' and '+tsv+'.'
-        print 'Tree (NJ under '+ARGS.model_andi_distance+' distance, midpoint'+\
-              '-rooted) written to '+t_out+'.'
-
 
     print '\nRun finished.'
     print '\nExplore your results with phandango and FigTree.'
