@@ -33,7 +33,7 @@ import pandas as pd
 from ete3 import Tree
 
 
-VERSION = 'pando version 1.2'
+VERSION = 'pando version 1.3'
 
 
 # set up the arguments parser to deal with the command line input
@@ -56,7 +56,9 @@ PARSER.add_argument('-a', '--andi_run', help='Run andi phylogenomic analysis?\
                     Default=\'yes\'', default='yes', required=False)
 PARSER.add_argument('-r', '--roary_run', help='Run roary pangenome analysis?\
                     Default=\'yes\'', default='yes', required=False)
-PARSER.add_argument('-m', '--model_andi_distance', help='Substitution model.\
+PARSER.add_argument('-m', '--metadata_run', help='Gather metadata for all\
+                    isolates? Default=\'yes\'', default='yes', required=False)
+PARSER.add_argument('-s', '--model_andi_distance', help='Substitution model.\
                     \'Raw\', \'JC\', or \'Kimura\'. Default=\'JC\'.',
                     default='JC', required=False)
 PARSER.add_argument('-c', '--percent_cutoff', help='For abricate, call the\
@@ -523,26 +525,27 @@ def main():
     #vi) Copy contigs to become temp_contigs into tempdir, only if andi 
     #requested.
     #Translation dict to store {random 9-character filename: original filename}
+    iso_ID_trans = {}
+    for iso in isos:
+        #Instantiate an Isolate class for each isolate in isolates
+        sample = Isolate(iso)
+        #Next, we could just use iso_path+/contigs.fa, but that would skip
+        #the if os.path.exists() test in sample.assembly(iso).
+        assembly_path = sample.assembly()
+        short_id = shortened_ID()
+        #Store key,value as original_name,short_id for later retrieval.
+        iso_ID_trans[iso] = short_id
+    with open(base+'_temp_names.txt', 'w') as tmp_names:
+        print '\nTranslated isolate IDs:\nShort\tOriginal'
+        for key, value in iso_ID_trans.items():
+            print value+'\t'+key
+            tmp_names.write(value+'\t'+key+'\n')
+
     if 'y' in ARGS.andi_run.lower():
-        iso_ID_trans = {}
-        for iso in isos:
-            #Instantiate an Isolate class for each isolate in isolates
-            sample = Isolate(iso)
-            #Next, we could just use iso_path+/contigs.fa, but that would skip
-            #the if os.path.exists() test in sample.assembly(iso).
-            assembly_path = sample.assembly()
-            short_id = shortened_ID()
-            #Store key,value as original_name,short_id for later retrieval.
-            iso_ID_trans[iso] = short_id
-            cmd = 'cp '+assembly_path+' '+assembly_tempdir+'/'+short_id+\
-                  '_contigs.fa'
-            os.system(cmd)
-            print 'Performing copy:', cmd
-        with open(base+'_temp_names.txt', 'w') as tmp_names:
-            print '\nTranslated isolate IDs:\nShort\tOriginal'
-            for key, value in iso_ID_trans.items():
-                print value+'\t'+key
-                tmp_names.write(value+'\t'+key+'\n')
+        cmd = 'cp '+assembly_path+' '+assembly_tempdir+'/'+short_id+\
+              '_contigs.fa'
+        os.system(cmd)
+        print 'Performing copy:', cmd
 
     #Run roary?
     if 'y' in ARGS.roary_run.lower():
@@ -588,7 +591,33 @@ def main():
         dm = read_file_lines(andi_mat)[1:]
         dm = lower_tri(dm)
 
-        #summary_frames will store all of the metaDataFrames herein
+        #Correct the names in the matrix
+        for i in range(0, len(dm.names)):
+            #iso_ID_trans[iso] is the short_id
+            if dm.names[i] == iso_ID_trans[iso]:
+                dm.names[i] = iso
+
+        #From the distance matrix in dm, infer the NJ tree
+        constructor = DistanceTreeConstructor()
+        njtree = constructor.nj(dm)
+        njtree.rooted = True
+        Phylo.write(njtree, 'temp.tre', 'newick')
+        t = Tree('temp.tre', format=1)
+        #Get rid of negative branch lengths (an artefact, not an error, of NJ)
+        for node in t.traverse():
+            node.dist = abs(node.dist)
+        t.set_outgroup(t.get_midpoint_outgroup())
+        t_out = base+'_andi_NJ_'+ARGS.model_andi_distance+'dist.nwk.tre'
+        t.write(format=1, outfile=t_out)
+        print 'Final tree (midpoint-rooted, NJ under '+\
+               ARGS.model_andi_distance+' distance) looks like this:'
+        #Print the ascii tree
+        print t
+        #Remove the temp.tre
+        os.remove('temp.tre')
+
+    if 'y' in ARGS.metadata_run.lower():
+       #summary_frames will store all of the metaDataFrames herein
         summary_frames = []
         n_isos = len(isos)
 
@@ -692,11 +721,6 @@ def main():
                     iso_df.append(new_iso_df)
             iso_df_pd = pd.concat(iso_df, axis=1)
             summary_isos.append(iso_df_pd)
-            #Correct the names in the matrix
-            for i in range(0, len(dm.names)):
-                #iso_ID_trans[iso] is the short_id
-                if dm.names[i] == iso_ID_trans[iso]:
-                    dm.names[i] = iso
         print 'Remaining isolate data gathered (mlst, species consensus,'+\
               ' flag-if-new)...'
         #Glue the isolate by isolate metadata into a single df
@@ -715,24 +739,6 @@ def main():
         metadata_overall.to_csv(csv, mode='w', index=True, index_label='name')
         metadata_overall.to_csv(tsv, mode='w', sep='\t', index=True,
                                 index_label='name')
-        #From the distance matrix in dm, infer the NJ tree
-        constructor = DistanceTreeConstructor()
-        njtree = constructor.nj(dm)
-        njtree.rooted = True
-        Phylo.write(njtree, 'temp.tre', 'newick')
-        t = Tree('temp.tre', format=1)
-        #Get rid of negative branch lengths (an artefact, not an error, of NJ)
-        for node in t.traverse():
-            node.dist = abs(node.dist)
-        t.set_outgroup(t.get_midpoint_outgroup())
-        t_out = base+'_andi_NJ_'+ARGS.model_andi_distance+'dist.nwk.tre'
-        t.write(format=1, outfile=t_out)
-        print 'Final tree (midpoint-rooted, NJ under '+\
-               ARGS.model_andi_distance+' distance) looks like this:'
-        #Print the ascii tree
-        print t
-        #Remove the temp.tre
-        os.remove('temp.tre')
         #Email the results
         if ARGS.email_addresses != None:
             phandango = 'https://jameshadfield.github.io/phandango/'
