@@ -7,10 +7,11 @@ Read in metadata from Excel spreadsheet.
 Add MALDI-ToF results, submit lab, and sp.
 Return a supermatrix of metadata and a tree.
 Specific for MDU folder structures and QC
-(but could be adapted for non-MDU folder structures)
+(but could be adapted for non-MDU folder structures).
+Optionally run roary analysis.
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160811_1115
+YYYMMDD_HHMM: 20160815_1605
 '''
 
 
@@ -33,7 +34,7 @@ import pandas as pd
 from ete3 import Tree
 
 
-VERSION = 'pando version 1.3.1'
+VERSION = 'pando version 1.3.2'
 
 
 # set up the arguments parser to deal with the command line input
@@ -53,11 +54,11 @@ PARSER.add_argument('-d', '--delete_tempdirs', help='Delete tempdirs created\
 PARSER.add_argument("-t", "--threads", help='Number of threads,\
                     default=\'72\'', default=72, type=int, required=False)
 PARSER.add_argument('-a', '--andi_run', help='Run andi phylogenomic analysis?\
-                    Default=\'yes\'', default='yes', required=False)
+                    Default=\'no\'', default='no', required=False)
 PARSER.add_argument('-r', '--roary_run', help='Run roary pangenome analysis?\
-                    Default=\'yes\'', default='yes', required=False)
+                    Default=\'no\'', default='no', required=False)
 PARSER.add_argument('-m', '--metadata_run', help='Gather metadata for all\
-                    isolates? Default=\'yes\'', default='yes', required=False)
+                    isolates? Default=\'no\'', default='no', required=False)
 PARSER.add_argument('-s', '--model_andi_distance', help='Substitution model.\
                     \'Raw\', \'JC\', or \'Kimura\'. Default=\'JC\'.',
                     default='JC', required=False)
@@ -65,12 +66,6 @@ PARSER.add_argument('-c', '--percent_cutoff', help='For abricate, call the\
                     gene \'present\' if greater than this value and \'maybe\'\
                     if less than this value. Default=95. NB: 100 percent=\
                     \'100\', not \'1\'.', default=95, type=int, required=False)
-PARSER.add_argument('-e', '--email_addresses', help='Email addresses to send\
-                    results (comma or space delimited)', nargs='+',
-                    required=False)
-PARSER.add_argument('-j', '--job_number', help='Enter the MDU job number\
-                    (no spaces; default=\'pando\').', default='pando',
-                    required=False)
 PARSER.add_argument('-x', '--excel_spreadsheet', help='Parse excel spreadsheet\
                     of metadata (.xlsx format)to extract LIMS data.\
                     The data must start on line 5 (1-based indexing, as per\
@@ -496,8 +491,7 @@ def main():
     spreadsheet option (adds MALDI-ToF, Submitting Lab ID, Submitting Lab 
     species guess) and/or use the flag-if-new to highlight
     'new' isolates.  Export the tree and metadata to .csv, .tsv/.tab file.
-    Export the 'isolates not found' to text file too.  Optionally, email the 
-    results.  
+    Export the 'isolates not found' to text file too.
     '''
 
     #i) read in the IDs from file
@@ -745,21 +739,6 @@ def main():
         metadata_overall.to_json(json)
         print '\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
               ' isolates written to '+csv+' and '+tsv+'.'
-
-        #Email the results
-        if ARGS.email_addresses != None:
-            phandango = 'https://jameshadfield.github.io/phandango/'
-            cmd_mail = 'mail -s \''+ARGS.job_number+'\' -a '+t_out+' -a '+\
-                csv+' -a '+tsv+' -a '+base+'_not_found.txt '+\
-                ','.join(ARGS.email_addresses)+' <<< \'Hi,'+\
-                '\n\nPlease find attached the results for job '+\
-                ARGS.job_number+'. To view the results, open \''+phandango+\
-                '\' and then simply drag and drop the attached .tre and .csv'+\
-                ' files into that window.  Alternatively, load the .tre in'+\
-                ' FigTree and import the annotations in the .tab file.'+\
-                '\n\nGood luck with your investigations,\n\nPando.\''
-            os.system(cmd_mail)
-            print '\nResults sent via email.'
 
     #Delete the tempdirs created during the run
     if 'y' in ARGS.delete_tempdirs.lower():
