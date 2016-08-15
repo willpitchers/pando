@@ -475,7 +475,7 @@ def roary(base):
     Run roary on the gff files output by prokka.
     '''
     cmd = 'roary -v -f '+base+'_roary -p '+str(ARGS.threads)+' '+\
-          base+'_prokka/*/*.gff'
+          'prokka/*/*.gff'
     os.system(cmd)
 
 def main():
