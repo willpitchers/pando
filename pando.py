@@ -716,7 +716,7 @@ def main():
         #Remove the temp.tre
         os.remove('temp.tre')
         print 'Tree (NJ under '+ARGS.model_andi_distance+\
-              ' distance, midpoint -rooted) written to '+t_out+'.'
+              ' distance, midpoint-rooted) written to '+t_out+'.'
 
     #Run roary?
     if 'y' in ARGS.roary_run.lower():
