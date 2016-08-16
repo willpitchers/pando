@@ -541,77 +541,6 @@ def main():
             print value+'\t'+key
             tmp_names.write(value+'\t'+key+'\n')
 
-    #Run roary?
-    if 'y' in ARGS.roary_run.lower():
-        n_isos = len(isos)
-        if n_isos <= ARGS.threads//2:
-            p = Pool(n_isos)
-        else:
-            p = Pool(ARGS.threads//2)
-        params = [(i, 'prokka') for i in isos if not
-                  os.path.exists('prokka/'+i)]
-        if len(params) > 0:
-            print '\nRunning prokka:'
-            p.map(prokka, params)
-        else:
-            print '\nProkka files already exist. Moving on to roary analysis.'
-        print '\nRunning roary:'
-        roary(base)
-        roary_genes = pd.read_table(base+'_roary/gene_presence_absence.Rtab',
-                                    index_col=0, header=0)
-        roary_genes = roary_genes.transpose()
-        roary_genes.to_csv(base+'_roary/gene_presence_absence.Ltab.csv',
-                           mode='w', index=True, index_label='name')
-        t = Tree(base+'_roary/accessory_binary_genes.fa.newick', format=1)
-        #Get rid of negative branch lengths (an artefact, not an error, of NJ)
-        for node in t.traverse():
-            node.dist = abs(node.dist)
-        t.set_outgroup(t.get_midpoint_outgroup())
-        t_out = base+'_roary/accessory_binary_genes_midpoint.nwk.tre'
-        t.write(format=1, outfile=t_out)
-        print '\nWritten midpoint-rooted roary tree.'
-
-    #Run andi?
-    if 'y' in ARGS.andi_run.lower():
-        #Run andi
-        andi_mat = 'andi_'+ARGS.model_andi_distance+'dist_'+base+'.mat'
-        andi_c = 'nice andi -j -m '+ARGS.model_andi_distance+' -t '+\
-                  str(ARGS.threads)+' '+assembly_tempdir+'/*_contigs.fa > '+\
-                  andi_mat
-        print '\nRunning andi with: \''+andi_c+'\''
-        os.system(andi_c)
-
-        #Read in the andi dist matrix, convert to lower triangle
-        dm = read_file_lines(andi_mat)[1:]
-        dm = lower_tri(dm)
-
-        #Correct the names in the matrix
-        for i in range(0, len(dm.names)):
-            #iso_ID_trans[iso] is the short_id
-            if dm.names[i] == iso_ID_trans[iso]:
-                dm.names[i] = iso
-
-        #From the distance matrix in dm, infer the NJ tree
-        constructor = DistanceTreeConstructor()
-        njtree = constructor.nj(dm)
-        njtree.rooted = True
-        Phylo.write(njtree, 'temp.tre', 'newick')
-        t = Tree('temp.tre', format=1)
-        #Get rid of negative branch lengths (an artefact, not an error, of NJ)
-        for node in t.traverse():
-            node.dist = abs(node.dist)
-        t.set_outgroup(t.get_midpoint_outgroup())
-        t_out = base+'_andi_NJ_'+ARGS.model_andi_distance+'dist.nwk.tre'
-        t.write(format=1, outfile=t_out)
-        print 'Final tree (midpoint-rooted, NJ under '+\
-               ARGS.model_andi_distance+' distance) looks like this:'
-        #Print the ascii tree
-        print t
-        #Remove the temp.tre
-        os.remove('temp.tre')
-        print 'Tree (NJ under '+ARGS.model_andi_distance+\
-              ' distance, midpoint -rooted) written to '+t_out+'.'
-
     if 'y' in ARGS.metadata_run.lower():
        #summary_frames will store all of the metaDataFrames herein
         summary_frames = []
@@ -739,6 +668,77 @@ def main():
         metadata_overall.to_json(json)
         print '\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
               ' isolates written to '+csv+' and '+tsv+'.'
+
+    #Run andi?
+    if 'y' in ARGS.andi_run.lower():
+        #Run andi
+        andi_mat = 'andi_'+ARGS.model_andi_distance+'dist_'+base+'.mat'
+        andi_c = 'nice andi -j -m '+ARGS.model_andi_distance+' -t '+\
+                  str(ARGS.threads)+' '+assembly_tempdir+'/*_contigs.fa > '+\
+                  andi_mat
+        print '\nRunning andi with: \''+andi_c+'\''
+        os.system(andi_c)
+
+        #Read in the andi dist matrix, convert to lower triangle
+        dm = read_file_lines(andi_mat)[1:]
+        dm = lower_tri(dm)
+
+        #Correct the names in the matrix
+        for i in range(0, len(dm.names)):
+            #iso_ID_trans[iso] is the short_id
+            if dm.names[i] == iso_ID_trans[iso]:
+                dm.names[i] = iso
+
+        #From the distance matrix in dm, infer the NJ tree
+        constructor = DistanceTreeConstructor()
+        njtree = constructor.nj(dm)
+        njtree.rooted = True
+        Phylo.write(njtree, 'temp.tre', 'newick')
+        t = Tree('temp.tre', format=1)
+        #Get rid of negative branch lengths (an artefact, not an error, of NJ)
+        for node in t.traverse():
+            node.dist = abs(node.dist)
+        t.set_outgroup(t.get_midpoint_outgroup())
+        t_out = base+'_andi_NJ_'+ARGS.model_andi_distance+'dist.nwk.tre'
+        t.write(format=1, outfile=t_out)
+        print 'Final tree (midpoint-rooted, NJ under '+\
+               ARGS.model_andi_distance+' distance) looks like this:'
+        #Print the ascii tree
+        print t
+        #Remove the temp.tre
+        os.remove('temp.tre')
+        print 'Tree (NJ under '+ARGS.model_andi_distance+\
+              ' distance, midpoint -rooted) written to '+t_out+'.'
+
+    #Run roary?
+    if 'y' in ARGS.roary_run.lower():
+        n_isos = len(isos)
+        if n_isos <= ARGS.threads//2:
+            p = Pool(n_isos)
+        else:
+            p = Pool(ARGS.threads//2)
+        params = [(i, 'prokka') for i in isos if not
+                  os.path.exists('prokka/'+i)]
+        if len(params) > 0:
+            print '\nRunning prokka:'
+            p.map(prokka, params)
+        else:
+            print '\nProkka files already exist. Moving on to roary analysis.'
+        print '\nRunning roary:'
+        roary(base)
+        roary_genes = pd.read_table(base+'_roary/gene_presence_absence.Rtab',
+                                    index_col=0, header=0)
+        roary_genes = roary_genes.transpose()
+        roary_genes.to_csv(base+'_roary/gene_presence_absence.Ltab.csv',
+                           mode='w', index=True, index_label='name')
+        t = Tree(base+'_roary/accessory_binary_genes.fa.newick', format=1)
+        #Get rid of negative branch lengths (an artefact, not an error, of NJ)
+        for node in t.traverse():
+            node.dist = abs(node.dist)
+        t.set_outgroup(t.get_midpoint_outgroup())
+        t_out = base+'_roary/accessory_binary_genes_midpoint.nwk.tre'
+        t.write(format=1, outfile=t_out)
+        print '\nWritten midpoint-rooted roary tree.'
 
     #Delete the tempdirs created during the run
     if 'y' in ARGS.delete_tempdirs.lower():
