@@ -470,12 +470,16 @@ def prokka(params):
     print cmd
     os.system(cmd)
 
-def roary(base):
+def roary(base, gffs, n_isos):
     ''''
     Run roary on the gff files output by prokka.
     '''
-    cmd = 'roary -v -f '+base+'_roary -p '+str(ARGS.threads)+' '+\
-          'prokka/*/*.gff'
+    if n_isos <= ARGS.threads//2:
+        threads = n_isos
+    else:
+        threads = ARGS.threads//2
+    cmd = 'nice roary -v -f '+base+'_roary -p '+str(threads)+' '+gffs
+    print '\nRunning roary with the command:\n'+cmd
     os.system(cmd)
 
 def main():
@@ -732,8 +736,7 @@ def main():
             p.map(prokka, params)
         else:
             print '\nProkka files already exist. Moving on to roary analysis.'
-        print '\nRunning roary:'
-        roary(base)
+        roary(base, ' '.join(['prokka/'+iso+'/*.gff' for iso in isos]), n_isos)
         roary_genes = pd.read_table(base+'_roary/gene_presence_absence.Rtab',
                                     index_col=0, header=0)
         roary_genes = roary_genes.transpose()
