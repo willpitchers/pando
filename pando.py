@@ -534,7 +534,6 @@ def main():
                   '_contigs.fa'
             os.system(cmd)
             print 'Performing copy:', cmd
-
     with open(base+'_temp_names.txt', 'w') as tmp_names:
         print '\nTranslated isolate IDs:\nShort\tOriginal'
         for key, value in iso_ID_trans.items():
@@ -682,12 +681,21 @@ def main():
         #Read in the andi dist matrix, convert to lower triangle
         dm = read_file_lines(andi_mat)[1:]
         dm = lower_tri(dm)
-
         #Correct the names in the matrix
-        for i in range(0, len(dm.names)):
-            #iso_ID_trans[iso] is the short_id
-            if dm.names[i] == iso_ID_trans[iso]:
-                dm.names[i] = iso
+        for iso in isos:
+            #Could do it this way, but this way is slower than nested loop
+            #dm.names[dm.names.index(iso_ID_trans[iso])] = iso
+            #real	0m9.417s
+            #user	1m18.576s
+            #sys	0m2.620s
+            #Nested loop is faster
+            for i in range(0, len(dm.names)):
+                #iso_ID_trans[iso] is the short_id
+                if dm.names[i] == iso_ID_trans[iso]:
+                    dm.names[i] = iso
+            #real	0m8.789s
+            #user	1m14.637s
+            #sys	0m2.420s
 
         #From the distance matrix in dm, infer the NJ tree
         constructor = DistanceTreeConstructor()
