@@ -11,8 +11,26 @@ Specific for MDU folder structures and QC
 Optionally run roary analysis.
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160816_1628
+YYYMMDD_HHMM: 20160817_1603
+
+Needs roary_plots_edit.py in the same working directory as pando.py
+roary_plots_edit.py is forked from 
+sanger-pathogens/Roary/master/contrib/roary_plots/roary_plots.py
+Also needs Jason Kwong's roary2fripan.py script in the working dir. 
+
+In summary, move into a directory where you want to run this script.  
+Enter the following three commands at the prompt:
+
+wget https://raw.githubusercontent.com/MDU-PHL/pando/master/pando.py
+wget https://raw.githubusercontent.com/kwongj/roary2fripan/master/roary2fripan.py
+wget https://raw.githubusercontent.com/MDU-PHL/pando/master/roary_plots_edit.py
+
+After completing the above, (on an MDU server) now run pando using:
+time nice python pando.py -i isos.txt
 '''
+
+
+VERSION = 'pando version 2'
 
 
 import os
@@ -26,15 +44,13 @@ import tempfile
 import shutil
 import itertools
 import glob
+from collections import defaultdict
 from multiprocessing import Pool
 from Bio import Phylo
 from Bio.Phylo.TreeConstruction import _DistanceMatrix
 from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
 import pandas as pd
 from ete3 import Tree
-
-
-VERSION = 'pando version 1.3.3'
 
 
 # set up the arguments parser to deal with the command line input
@@ -470,7 +486,7 @@ def prokka(params):
     print cmd
     os.system(cmd)
 
-def roary(base, gffs, n_isos):
+def roary(base, sp, gffs, n_isos):
     ''''
     Run roary on the gff files output by prokka.
     '''
@@ -478,8 +494,10 @@ def roary(base, gffs, n_isos):
         threads = n_isos
     else:
         threads = ARGS.threads//2
-    cmd = 'nice roary -v -f '+base+'_roary -p '+str(threads)+' '+gffs
-    print '\nRunning roary with the command:\n'+cmd
+    #add -r option to roary after testing and -e -n 
+    cmd = 'nice roary -v -f '+base+'_'+sp+'_roary -p '+str(threads)+\
+          ' '+gffs
+    print '\nRunning roary for '+sp+' with the command:\n'+cmd
     os.system(cmd)
 
 def main():
@@ -524,6 +542,8 @@ def main():
     #requested.
     #Translation dict to store {random 9-character filename: original filename}
     iso_ID_trans = {}
+    #Dict to store each isolate under each consensus species#####maybe delete
+    isos_grouped_by_cons_spp = defaultdict(list)
     for iso in isos:
         #Instantiate an Isolate class for each isolate in isolates
         sample = Isolate(iso)
@@ -543,8 +563,13 @@ def main():
         for key, value in iso_ID_trans.items():
             print value+'\t'+key
             tmp_names.write(value+'\t'+key+'\n')
-
-    if 'y' in ARGS.metadata_run.lower():
+    run_metadata = False
+    if 'y' in ARGS.metadata_run.lower() or 'y' in ARGS.roary_run.lower():
+        run_metadata = True
+        if 'y' in ARGS.roary_run.lower():
+            print '\nRun roary requested. So, first, we need to run the'+\
+                   ' metadata analysis.  Let\'s go!'
+    if run_metadata == True:
        #summary_frames will store all of the metaDataFrames herein
         summary_frames = []
         n_isos = len(isos)
@@ -671,6 +696,10 @@ def main():
         metadata_overall.to_json(json)
         print '\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
               ' isolates written to '+csv+' and '+tsv+'.'
+        #Populate the isos_grouped_by_cons_spp dict with isolate IDs
+        for k, v in zip(metadata_overall['sp_krkn_ReadAndContigConsensus'],
+                        metadata_overall.index):
+            isos_grouped_by_cons_spp[k.replace(' ', '_')].append(v)
 
     #Run andi?
     if 'y' in ARGS.andi_run.lower():
@@ -687,7 +716,7 @@ def main():
         dm = lower_tri(dm)
         #Correct the names in the matrix
         for iso in isos:
-            #Could do it this way, but this way is slower than nested loop
+            #Could do it this way, but this is slower than a nested loop
             #dm.names[dm.names.index(iso_ID_trans[iso])] = iso
             #real	0m9.417s
             #user	1m18.576s
@@ -724,32 +753,59 @@ def main():
 
     #Run roary?
     if 'y' in ARGS.roary_run.lower():
-        n_isos = len(isos)
-        if n_isos <= ARGS.threads//2:
-            p = Pool(n_isos)
-        else:
-            p = Pool(ARGS.threads//2)
-        params = [(i, 'prokka') for i in isos if not
-                  os.path.exists('prokka/'+i)]
-        if len(params) > 0:
-            print '\nRunning prokka:'
-            p.map(prokka, params)
-        else:
-            print '\nProkka files already exist. Moving on to roary analysis.'
-        roary(base, ' '.join(['prokka/'+iso+'/*.gff' for iso in isos]), n_isos)
-        roary_genes = pd.read_table(base+'_roary/gene_presence_absence.Rtab',
-                                    index_col=0, header=0)
-        roary_genes = roary_genes.transpose()
-        roary_genes.to_csv(base+'_roary/gene_presence_absence.Ltab.csv',
-                           mode='w', index=True, index_label='name')
-        t = Tree(base+'_roary/accessory_binary_genes.fa.newick', format=1)
-        #Get rid of negative branch lengths (an artefact, not an error, of NJ)
-        for node in t.traverse():
-            node.dist = abs(node.dist)
-        t.set_outgroup(t.get_midpoint_outgroup())
-        t_out = base+'_roary/accessory_binary_genes_midpoint.nwk.tre'
-        t.write(format=1, outfile=t_out)
-        print '\nWritten midpoint-rooted roary tree.'
+        #Run Roary on the species_consensus subsets.  
+        print 'Now, let\'s run roary!'
+        for k, v in isos_grouped_by_cons_spp.items():
+            n_isos = len(v)
+            if n_isos > 1:
+                if n_isos <= ARGS.threads//2:
+                    p = Pool(n_isos)
+                else:
+                    p = Pool(ARGS.threads//2)
+                params = [(i, 'prokka') for i in isos if not
+                          os.path.exists('prokka/'+i)]
+                if len(params) > 0:
+                    print '\nRunning prokka:'
+                    p.map(prokka, params)
+                else:
+                    print '\nProkka files already exist. Let\'s move on to the roary analysis...'
+                shutil.rmtree(base+'_'+k+'_roary', ignore_errors=True)
+                roary(base, k, ' '.join(['prokka/'+iso+'/*.gff' for iso in v]), n_isos)
+                roary_genes = pd.read_table(base+'_'+k+'_roary/gene_presence_absence.Rtab', index_col=0, header=0)
+                roary_genes = roary_genes.transpose()
+                roary_genes.to_csv(base+'_'+k+'_roary/gene_presence_absence.Ltab.csv',
+                                   mode='w', index=True, index_label='name')
+                if n_isos > 2:
+                    t = Tree(base+'_'+k+'_roary/accessory_binary_genes.fa.newick', format=1)
+                    #Get rid of negative branch lengths (an artefact, not an error, of NJ)
+                    for node in t.traverse():
+                        node.dist = abs(node.dist)
+                    t.set_outgroup(t.get_midpoint_outgroup())
+                    t_out = base+'_'+k+'_roary/accessory_binary_genes_midpoint.nwk.tre'
+                    t.write(format=1, outfile=t_out)
+                    print '\nWritten midpoint-rooted roary tree.\n'
+                    wd = os.getcwd()
+                    os.chdir(base+'_'+k+'_roary')
+                    os.system('python ../roary_plots_edit.py --labels --format pdf accessory_binary_genes_midpoint.nwk.tre gene_presence_absence.csv')
+                    os.chdir(wd)
+                else:
+                    print 'Need more than two isolates to have a meaningful pangenome tree. No mid-point rooting of the pangenome tree performed.'
+                wd = os.getcwd()
+                os.chdir(base+'_'+k+'_roary')
+                os.system('python ../roary2fripan.py '+base+'_'+k)
+                roary2fripan_strains_file = pd.read_table(base+'_'+k+'.strains', index_col=0, header=0)
+                info_list = []
+                info_list.append(roary2fripan_strains_file)
+                info_list.append(metadata_overall.loc[v, :])
+                strains_info_out = pd.concat(info_list, axis=1)
+                strains_info_out.to_csv(base+'_'+k+'.strains', mode='w', sep='\t', index=True,
+                                        index_label='ID')
+                print 'Updated '+base+'_'+k+'.strains with all metadata.'
+                os.system('cp '+base+'_'+k+'* ~/public_html/fripan')
+                os.chdir(wd)
+            else:
+                print 'Only one isolate in '+k+'. Need at least 2 isolates '+\
+                      'to run roary.  Moving on...'
 
     #Delete the tempdirs created during the run
     if 'y' in ARGS.delete_tempdirs.lower():
