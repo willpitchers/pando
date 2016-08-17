@@ -11,7 +11,16 @@ Specific for MDU folder structures and QC
 Optionally run roary analysis.
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160817_1603
+YYYMMDD_HHMM: 20160817_1700
+
+Acknowledgements:
+Torsten Seemann (pando relies heavily on Torsten's amazing tools)
+Anders Goncalves da Silva (showed me how to do the multiprocessing)
+Dieter Bulach (showed me how to set up fripan on the MDU server)
+Jason Kwong (roary2fripan, Kwong's idea to run Kraken on the contigs)
+Susan Ballard (ongoing feature requests)
+Tim Stinear (Tim's advice to use more-than-kraken to bin isolates into species)
+Andrew Page (for all roary tools)
 
 Needs roary_plots_edit.py in the same working directory as pando.py
 roary_plots_edit.py is forked from
@@ -570,7 +579,7 @@ def main():
     if 'y' in ARGS.metadata_run.lower() or 'y' in ARGS.roary_run.lower():
         run_metadata = True
         if 'y' in ARGS.roary_run.lower():
-            print '\nRun roary requested but we first need to run the'+\
+            print '\nRun roary requested, but we first need to run the'+\
                    ' metadata analysis.  Let\'s go!'
     if run_metadata:
        #summary_frames will store all of the metaDataFrames herein
