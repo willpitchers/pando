@@ -11,16 +11,17 @@ Specific for MDU folder structures and QC
 Optionally run roary analysis.
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160817_1700
+YYYMMDD_HHMM: 20160818_1429
 
 Acknowledgements:
-Torsten Seemann (pando relies heavily on Torsten's amazing tools)
-Anders Goncalves da Silva (showed me how to do the multiprocessing)
-Dieter Bulach (showed me how to set up fripan on the MDU server)
-Jason Kwong (roary2fripan, Kwong's idea to run Kraken on the contigs)
+Torsten Seemann (pando relies heavily on Torsten's tools)
+Anders Goncalves da Silva (advice on multiprocessing)
+Dieter Bulach (advice on setting up fripan on the MDU server)
+Jason Kwong (roary2fripan, advised to run Kraken on the contigs)
 Susan Ballard (ongoing feature requests)
-Tim Stinear (Tim's advice to use more-than-kraken to bin isolates into species)
+Tim Stinear (advised to use more-than-kraken to bin isolates into species)
 Andrew Page (for all roary tools)
+Ben Howden (feature requests)
 
 Needs roary_plots_edit.py in the same working directory as pando.py
 roary_plots_edit.py is forked from
@@ -808,7 +809,8 @@ def main():
                     print '\nWritten midpoint-rooted roary tree.\n'
                     wd = os.getcwd()
                     os.chdir(base+'_'+k+'_roary')
-                    os.system('python ../roary_plots_edit.py --labels' +\
+                    os.system('cp ../roary_plots_edit.py .')
+                    os.system('python roary_plots_edit.py --labels' +\
                               ' --format pdf ' +\
                               'accessory_binary_genes_midpoint.nwk.tre' +\
                               'gene_presence_absence.csv')
