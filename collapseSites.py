@@ -8,7 +8,7 @@ Add up the alignments in variant sites and write to file in fasta format.
 
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160819_1830
+YYYMMDD_HHMM: 20160819_1624
 '''
 
 
