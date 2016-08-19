@@ -11,7 +11,7 @@ Specific for MDU folder structures and QC
 Optionally run roary analysis.
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160818_1429
+YYYMMDD_HHMM: 20160819_1826
 
 Acknowledgements:
 Torsten Seemann (pando relies heavily on Torsten's tools)
@@ -23,17 +23,14 @@ Tim Stinear (advised to use more-than-kraken to bin isolates into species)
 Andrew Page (for all roary tools)
 Ben Howden (feature requests)
 
-Needs roary_plots_edit.py in the same working directory as pando.py
-roary_plots_edit.py is forked from
-sanger-pathogens/Roary/master/contrib/roary_plots/roary_plots.py
-Also needs Jason Kwong's roary2fripan.py script in the working dir.
+Needs Jason Kwong's roary2fripan.py script in the working dir.
 
 In summary, move into a directory where you want to run this script.
-Enter the following three commands at the prompt:
+Enter the following two commands at the prompt:
 
 wget raw.githubusercontent.com/MDU-PHL/pando/master/pando.py
+wget raw.githubusercontent.com/MDU-PHL/pando/master/collapseSites.py
 wget raw.githubusercontent.com/kwongj/roary2fripan/master/roary2fripan.py
-wget raw.githubusercontent.com/MDU-PHL/pando/master/roary_plots_edit.py
 
 After completing the above, (on an MDU server) now run pando using:
 time nice python pando.py -i isos.txt
@@ -53,14 +50,16 @@ import itertools
 import glob
 from collections import defaultdict
 from multiprocessing import Pool
+from Bio import AlignIO
 from Bio import Phylo
 from Bio.Phylo.TreeConstruction import _DistanceMatrix
+from Bio.Phylo.TreeConstruction import DistanceCalculator
 from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
 import pandas as pd
 from ete3 import Tree
 
 
-VERSION = 'pando version 2'
+VERSION = 'pando version 2.1'
 
 
 # set up the arguments parser to deal with the command line input
@@ -503,12 +502,7 @@ def roary(base, sp, gffs):
     ''''
     Run roary on the gff files output by prokka.
     '''
-#     if n_isos <= ARGS.threads//2:
-#         threads = n_isos
-#     else:
-#         threads = ARGS.threads//2
-    #add -r option to roary after testing and -e -n
-    cmd = 'nice roary -v -f '+base+'_'+sp+'_roary -e -n -p '+\
+    cmd = 'nice roary -f '+base+'_'+sp+'_roary -e -n -v -z -p '+\
           str(ARGS.threads)+' '+gffs
     print '\nRunning roary for '+sp+' with the command:\n'+cmd
     os.system(cmd)
@@ -766,6 +760,30 @@ def main():
 
     #Run roary?
     if 'y' in ARGS.roary_run.lower():
+        roary_keepers = [
+                        "accessory.header.embl",
+                        "accessory.tab",
+                        "accessory_binary_genes.fa",
+                        "accessory_binary_genes.fa.newick",
+                        "accessory_binary_genes_midpoint.nwk.tre",
+                        "accessory_graph.dot",
+                        "blast_identity_frequency.Rtab",
+                        "clustered_proteins",
+                        "core_accessory.header.embl",
+                        "core_accessory.tab",
+                        "core_accessory_graph.dot",
+                        "core_gene_alignment.aln",
+                        "gene_presence_absence.Ltab.csv",
+                        "gene_presence_absence.Rtab",
+                        "gene_presence_absence.csv",
+                        "number_of_conserved_genes.Rtab",
+                        "number_of_genes_in_pan_genome.Rtab",
+                        "number_of_new_genes.Rtab",
+                        "number_of_unique_genes.Rtab",
+                        "pan_genome_reference.fa",
+                        "pan_genome_sequences",
+                        "summary_statistics.txt"
+                        ]
         params = [(i, 'prokka') for i in isos if not
                   os.path.exists('prokka/'+i)]
         if len(params) > 0:
@@ -810,11 +828,10 @@ def main():
                     print '\nWritten midpoint-rooted roary tree.\n'
                     wd = os.getcwd()
                     os.chdir(base+'_'+k+'_roary')
-                    os.system('cp ../roary_plots_edit.py .')
-                    os.system('python roary_plots_edit.py --labels' +\
-                              ' --format pdf ' +\
-                              'accessory_binary_genes_midpoint.nwk.tre' +\
-                              'gene_presence_absence.csv')
+                    for f_name in glob.glob('*'):
+                        if f_name not in roary_keepers:
+                            shutil.rmtree(f_name, ignore_errors=True)
+                            os.remove(f_name)
                     os.chdir(wd)
                 else:
                     print 'Need more than two isolates to have a meaningful '+\
@@ -822,6 +839,36 @@ def main():
                           'pangenome tree performed.'
                 wd = os.getcwd()
                 os.chdir(base+'_'+k+'_roary')
+                os.system('python ../collapseSites.py' +\
+                          ' -f core_gene_alignment.aln -i fasta')
+                os.system('FastTree -nt -gtr < ' +\
+                          ' core_gene_alignment_collapsed.fasta' +\
+                          '> core_gene_FastTree_SNPs.tre')
+
+                #calc pairwise snp dist and write to file
+                with open('core_gene_alignment_collapsed.fasta', 'r') as inf:
+                    aln = AlignIO.read(inf, 'fasta')
+                    names = ['Isolate']
+                    tri = []
+                    for i in range(0,len(aln)):
+                        z = []
+                        names.append(aln[i].id)
+                        for j in range(0, len(aln)):
+                            x = len([y for y in zip(aln[i].seq,
+                                    aln[j].seq) if y[0] != y[1]])
+                            z.append(x)
+                        z.insert(0,aln[i].id)
+                        tri.append(z)
+                    with open('core_gene_SNP_distance.tab', 'w') as distmat:
+                        header = '\t'.join(names)
+                        distmat.write(header+'\n')
+                        print header
+                        for i in tri:
+                            row = '\t'.join(str(j) for j in i)
+                            print row
+                            distmat.write(row + '\n')
+
+                #convert roary output to fripan compatible
                 os.system('python ../roary2fripan.py '+base+'_'+k)
                 roary2fripan_strains_file = pd.read_table(base+'_'+k+
                                                           '.strains',
