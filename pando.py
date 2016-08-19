@@ -499,17 +499,17 @@ def prokka(params):
     print cmd
     os.system(cmd)
 
-def roary(base, sp, gffs, n_isos):
+def roary(base, sp, gffs):
     ''''
     Run roary on the gff files output by prokka.
     '''
-    if n_isos <= ARGS.threads//2:
-        threads = n_isos
-    else:
-        threads = ARGS.threads//2
+#     if n_isos <= ARGS.threads//2:
+#         threads = n_isos
+#     else:
+#         threads = ARGS.threads//2
     #add -r option to roary after testing and -e -n
-    cmd = 'nice roary -v -f '+base+'_'+sp+'_roary -p '+str(threads)+\
-          ' '+gffs
+    cmd = 'nice roary -v -f '+base+'_'+sp+'_roary -e -n -p '+\
+          str(ARGS.threads)+' '+gffs
     print '\nRunning roary for '+sp+' with the command:\n'+cmd
     os.system(cmd)
 
@@ -766,26 +766,27 @@ def main():
 
     #Run roary?
     if 'y' in ARGS.roary_run.lower():
+        params = [(i, 'prokka') for i in isos if not
+                  os.path.exists('prokka/'+i)]
+        if len(params) > 0:
+            print '\nRunning prokka:'
+            if len(params) <= ARGS.threads//2:
+                p = Pool(len(params))
+            else:
+                p = Pool(ARGS.threads//2)
+            p.map(prokka, params)
+        else:
+            print '\nProkka files already exist. Let\'s move on to '+\
+                  'the roary analysis...'
+
         #Run Roary on the species_consensus subsets.
         print 'Now, let\'s run roary!'
         for k, v in isos_grouped_by_cons_spp.items():
             n_isos = len(v)
             if n_isos > 1:
-                if n_isos <= ARGS.threads//2:
-                    p = Pool(n_isos)
-                else:
-                    p = Pool(ARGS.threads//2)
-                params = [(i, 'prokka') for i in isos if not
-                          os.path.exists('prokka/'+i)]
-                if len(params) > 0:
-                    print '\nRunning prokka:'
-                    p.map(prokka, params)
-                else:
-                    print '\nProkka files already exist. Let\'s move on to '+\
-                          'the roary analysis...'
                 shutil.rmtree(base+'_'+k+'_roary', ignore_errors=True)
                 roary(base, k,
-                      ' '.join(['prokka/'+iso+'/*.gff' for iso in v]), n_isos)
+                      ' '.join(['prokka/'+iso+'/*.gff' for iso in v]))
                 roary_genes = pd.read_table(base+'_'+k+
                                             '_roary/gene_presence_absence.' +\
                                             'Rtab',
