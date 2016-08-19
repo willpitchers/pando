@@ -8,7 +8,7 @@ Add up the alignments in variant sites and write to file in fasta format.
 
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160819_1624
+YYYMMDD_HHMM: 20160819_1830
 '''
 
 
@@ -48,9 +48,10 @@ def read_collapse(infile, informat):
             if len(base_count) > 1:
                 variant_sites.append(pos)
             pos += 1
+        print 'Collapsing alignment to '+str(len(variant_sites))+' sites...'
         cmd = ['alignment[:, '+str(i)+':'+str(i+1)+']' for i in variant_sites]
         snp_alignment = eval('+'.join(cmd))
-        with open('out.fasta', 'w') as outfile:#)
+        with open('core_gene_alignment_collapsed.fasta', 'w') as outfile:
             AlignIO.write(snp_alignment, outfile, 'fasta')
 
 
