@@ -839,11 +839,8 @@ def main():
                           'pangenome tree performed.'
                 wd = os.getcwd()
                 os.chdir(base+'_'+k+'_roary')
-                os.system('python ../collapseSites.py' +\
-                          ' -f core_gene_alignment.aln -i fasta')
-                os.system('FastTree -nt -gtr < ' +\
-                          ' core_gene_alignment_collapsed.fasta' +\
-                          '> core_gene_FastTree_SNPs.tre')
+                os.system('python ../collapseSites.py -f core_gene_alignment.aln -i fasta')
+                os.system('FastTree -nt -gtr < core_gene_alignment_collapsed.fasta > core_gene_FastTree_SNPs.tre')
 
                 #calc pairwise snp dist and write to file
                 with open('core_gene_alignment_collapsed.fasta', 'r') as inf:
