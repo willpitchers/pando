@@ -11,7 +11,7 @@ Specific for MDU folder structures and QC
 Optionally run roary analysis.
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160820_1355
+YYYMMDD_HHMM: 20160821_0000
 
 Acknowledgements:
 Torsten Seemann (pando relies heavily on Torsten's tools)
@@ -59,7 +59,7 @@ import pandas as pd
 from ete3 import Tree
 
 
-VERSION = 'pando version 2.2'
+VERSION = 'pando version 2.3'
 
 
 # set up the arguments parser to deal with the command line input
@@ -507,6 +507,22 @@ def roary(base, sp, gffs):
     print '\nRunning roary for '+sp+' with the command:\n'+cmd
     os.system(cmd)
 
+def pw_calc(aln_seq_coords):
+    '''
+    Calculate the absolute distance between two sequences, in a range of seqs.
+    '''
+    df_dist = []
+    for m in aln_seq_coords:
+        (aln, i, j) = m
+        print i, j
+        name = aln[i].id
+        x = len([y for y in zip(aln[i].seq,
+                aln[j].seq) if len(set(y)) > 1 and 'N' not in set(y) and '-' not in set(y) and '?' not in set(y)])
+        df = pd.DataFrame([{aln[j].id: x}], index=[name])
+        df_dist.append(df)
+    return pd.concat(df_dist, axis=1)
+
+
 def main():
     '''
     Read in the MDU-IDs from file. For each ID, instantiate an object of
@@ -845,25 +861,20 @@ def main():
                 #calc pairwise snp dist and write to file
                 with open('core_gene_alignment_collapsed.fasta', 'r') as inf:
                     aln = AlignIO.read(inf, 'fasta')
-                    names = ['Isolate']
-                    tri = []
+                    pairs = []
                     for i in range(0,len(aln)):
-                        z = []
-                        names.append(aln[i].id)
-                        for j in range(0, len(aln)):
-                            x = len([y for y in zip(aln[i].seq,
-                                    aln[j].seq) if len(set(y)) > 1 and 'N' not in set(y) and '-' not in set(y) and '?' not in set(y)])
-                            z.append(x)
-                        z.insert(0,aln[i].id)
-                        tri.append(z)
-                    with open('core_gene_SNP_distance.tab', 'w') as distmat:
-                        header = '\t'.join(names)
-                        distmat.write(header+'\n')
-                        print header
-                        for i in tri:
-                            row = '\t'.join(str(j) for j in i)
-                            print row
-                            distmat.write(row + '\n')
+                        lst = [(aln, i, j) for j in range(0, i+1)]
+                        pairs.append(lst)
+                    if len(pairs) <= ARGS.threads:
+                        p = Pool(len(pairs))
+                    else:
+                        p = Pool(ARGS.threads)
+                    print 'Running pw comparisons in parallel...'
+                    result = p.map(pw_calc, pairs)
+                    summary = pd.concat(result, axis=0)
+                    summary.fillna('', inplace=True)
+                    with open('core_gene_alignment_SNP_distances.tab', 'w') as distmat:
+                        summary.to_csv(distmat, mode='w', sep='\t', index=True, index_label='name')
 
                 #convert roary output to fripan compatible
                 os.system('python ../roary2fripan.py '+base+'_'+k)
