@@ -69,7 +69,7 @@ def read_collapse(infile, informat):
         with open('core_gene_alignment_collapsed.fasta', 'w') as outfile:
             AlignIO.write(aln, outfile, 'fasta')
             print 'Written collapsed alignment to' +\
-                  'core_gene_alignment_collapsed.fasta'
+                  ' core_gene_alignment_collapsed.fasta'
 
 
 def main():
