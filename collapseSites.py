@@ -8,15 +8,18 @@ Add up the alignments in variant sites and write to file in fasta format.
 
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160819_1624
+YYYMMDD_HHMM: 20160820_1356
 '''
 
 
 #import modules
 import argparse
 from Bio import AlignIO
+from Bio import SeqIO
+import sys
 from Bio.Align import AlignInfo
 from Bio.Alphabet import generic_dna
+from Bio.Align import MultipleSeqAlignment
 
 
 
@@ -37,9 +40,14 @@ def read_collapse(infile, informat):
     '''
     with open(infile, 'r') as input_handle:
         alignment = AlignIO.read(input_handle, informat, alphabet=generic_dna)
+        print 'Read alignment...'
+        for record in alignment:
+            record.seq = record.seq.upper()
+        print 'Converted sequences to uppercase...'
         summary_align = AlignInfo.SummaryInfo(alignment)
         first_seq = (alignment[0].seq)
         my_pssm = summary_align.pos_specific_score_matrix(first_seq)
+        print 'Calculated position specific score matrix...'
         dna_bases = ['A', 'C', 'T', 'G']
         pos = 0
         variant_sites = []
@@ -48,11 +56,19 @@ def read_collapse(infile, informat):
             if len(base_count) > 1:
                 variant_sites.append(pos)
             pos += 1
+        print 'Determined variant_site positions...'
         print 'Collapsing alignment to '+str(len(variant_sites))+' sites...'
-        cmd = ['alignment[:, '+str(i)+':'+str(i+1)+']' for i in variant_sites]
-        snp_alignment = eval('+'.join(cmd))
+        variant_cols = []
+        for i in variant_sites:
+            variant_cols.append(alignment[:,i:i+1])
+        aln = MultipleSeqAlignment(variant_cols[0])
+        for i in variant_cols[1:]:
+            aln += i
+        print aln
         with open('core_gene_alignment_collapsed.fasta', 'w') as outfile:
-            AlignIO.write(snp_alignment, outfile, 'fasta')
+            AlignIO.write(aln, outfile, 'fasta')
+            print 'Written collapsed alignment to' +\
+                  'core_gene_alignment_collapsed.fasta'
 
 
 def main():
