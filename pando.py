@@ -11,7 +11,7 @@ Specific for MDU folder structures and QC
 Optionally run roary analysis.
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160819_1826
+YYYMMDD_HHMM: 20160820_1355
 
 Acknowledgements:
 Torsten Seemann (pando relies heavily on Torsten's tools)
@@ -59,7 +59,7 @@ import pandas as pd
 from ete3 import Tree
 
 
-VERSION = 'pando version 2.1'
+VERSION = 'pando version 2.2'
 
 
 # set up the arguments parser to deal with the command line input
@@ -833,7 +833,7 @@ def main():
                             shutil.rmtree(f_name, ignore_errors=True)
                             os.remove(f_name)
                     os.chdir(wd)
-                else:
+                if n_isos <= 2:
                     print 'Need more than two isolates to have a meaningful '+\
                           'pangenome tree. No mid-point rooting of the ' +\
                           'pangenome tree performed.'
@@ -852,7 +852,7 @@ def main():
                         names.append(aln[i].id)
                         for j in range(0, len(aln)):
                             x = len([y for y in zip(aln[i].seq,
-                                    aln[j].seq) if y[0] != y[1]])
+                                    aln[j].seq) if len(set(y)) > 1 and 'N' not in set(y) and '-' not in set(y) and '?' not in set(y)])
                             z.append(x)
                         z.insert(0,aln[i].id)
                         tri.append(z)
