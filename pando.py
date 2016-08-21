@@ -873,7 +873,7 @@ def main():
                     result = p.map(pw_calc, pairs)
                     summary = pd.concat(result, axis=0)
                     summary.fillna('', inplace=True)
-                    with open('core_gene_alignment_SNP_distances.tab', 'w') as distmat:
+                    with open('core_gene_alignment_SNV_distances.tab', 'w') as distmat:
                         summary.to_csv(distmat, mode='w', sep='\t', index=True, index_label='name')
 
                 #convert roary output to fripan compatible
