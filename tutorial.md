@@ -1,4 +1,6 @@
 # Pando, analysis workflow
+In its current state, pando.py relies on the MDU file structure and initial QC results.  It also depends on a number of softwares installed on the mdu-servers.  To use it outside of the MDU file system, some parts of the code will need to be re-written.  
+
 ## 1. Intitiating a job.
 
 A LIMS request will be submitted to Bioinformatics as an excel spreadsheet, for CPE with a file name CPE_ongoing_YYYMMDD.xlsx (YYYYMMDD = Year, Month, Date).  The file contains a set of CPE isolates in a two year rolling window.  Open the file and look for the red highlighted rows – these are the new isolates for this request.
