@@ -1,9 +1,9 @@
-# CPE ongoing, analysis workflow
+# Pando, analysis workflow
 ## 1. Intitiating a job.
 
-A LIMS request will be submitted to Bioinformatics as an excel spreadsheet, with a file name CPE_ongoing_YYYMMDD.xlsx (YYYYMMDD = Year, Month, Date).  The file contains a set of isolates in a two year rolling window.  Open the file and look for the red highlighted rows – these are the new isolates for this request.
+A LIMS request will be submitted to Bioinformatics as an excel spreadsheet, for CPE with a file name CPE_ongoing_YYYMMDD.xlsx (YYYYMMDD = Year, Month, Date).  The file contains a set of CPE isolates in a two year rolling window.  Open the file and look for the red highlighted rows – these are the new isolates for this request.
 
-An email will also be sent from Molecular to state that the reads are now available for analysis.  Bioinformatics will perform initial QC on the reads and let the analyst know when this is in progress or has been completed.  
+An email will also be sent from Molecular to Bioinformatics stating that the reads are now available for analysis.  Bioinformatics must perform initial QC on the reads before pando can be run successfully.  They will let the analyst know when this is in progress or has been completed.  
 
 Copy the excel spreadsheet to an existing folder on the server:
 ```
@@ -78,7 +78,7 @@ screen -S pando
 ```
 
 Start a screen log to save the stdout to text file using the keystroke
-Control+a, shift+H.  Toggle the screenlog.0 off with the same keystroke.  Rename it the screenlog.0 file at the end of the run if you would like to store it for future reference (else it may be overwritten).  
+Control+a, shift+H.  Toggle the screenlog.0 off with the same keystroke.   
 
 ## 2. Running the job request using pando
 Test the setup using:
@@ -97,4 +97,5 @@ To do a full run:
 ```
 time nice python pando.py -i isolates_20160913.txt -n 2016-18848 2016-18844 2016-18808 2016-18697 2016-18648 -x CPE_ongoing_2010913.xlsx -m y -a y -r y
 ```
-Whilst running, exit the screen using control+a, d.  Check the progress by `tail screenlog.0`, `htop -u username` or going back into the screen with `screen -r pando`.
+Whilst running, exit the screen using control+a, d.  Check the progress by `tail screenlog.0`, `htop -u username` or going back into the screen with `screen -r pando`. <br>
+Kill the screen process ID (`PID`) using `top` or enter the screen, hit control+c then control+d (this latter option might not work if `pando` is in the middle of a multiprocessing loop).  Rename the `screenlog.0` file at the end of the run if you would like to store it for future reference (else it may be overwritten). 
