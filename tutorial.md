@@ -19,7 +19,7 @@ wget raw.githubusercontent.com/MDU-PHL/pando/master/collapseSites.py
 wget raw.githubusercontent.com/kwongj/roary2fripan/master/roary2fripan.py
 ```
 
-Test it with:
+Perform a basic test with:
 ```
 python pando.py -h
 usage: pando.py [-h] -i MDU_READ_IDS [-n NEW_IDS [NEW_IDS ...]] [-w WGS_QC]
@@ -79,21 +79,21 @@ Start a screen session to run the job, named using `-S`:
 screen -S pando
 ```
 
-Start a screen log to save the stdout to text file using the keystroke
+To start a screen log that saves the stdout to text file, use the keystroke
 Control+a, shift+H.  Toggle the screenlog.0 off with the same keystroke.   
 
 ## 2. Running the job request using pando
-Test the setup using:
+Test the command without actually running the job:
 ```
 time nice python pando.py -i isolates_20160913.txt -n 2016-18848 2016-18844 2016-18808 2016-18697 2016-18648 -x CPE_ongoing_2010913.xlsx
 ```
 
-There a three options to run pando:
+There a three options to run pando (each can be run individually, by default each is set to `off`).  Switch on an option with `yes`:
 
 <i>i</i>) `-m y` a metadata only run (will create a metadata super-matrix for all isolates in the analysis and report those that were missing). This step is fast.<br>
 <i>ii</i>) `-a y` an andi run (to get the NJ tree). This step is slow. <br>
 <i>iii</i>) `-r y` a roary run to get the pangenome and associated fripan files (do a `mkdir /home/username/public_html/fripan` before running this option, and clone the fripan code from https://github.com/drpowell/FriPan into this folder).  This step is very slow.<br>  
-Assess the load on the server using `htop` and choose the number of threads acccordingly (`72` by default)<br>
+As pando uses `mutliprocessing`, assess the load on the server prior to running using `htop`.  Choose a server with a low workload and specify the number of threads acccordingly (`pando.py` defaults to `--threads 72`)<br>
 
 To do a full run:
 ```
