@@ -93,7 +93,8 @@ There a three options to run pando (each can be run individually, by default eac
 <i>i</i>) `-m y` a metadata only run (will create a metadata super-matrix for all isolates in the analysis and report those that were missing). This step is fast.<br>
 <i>ii</i>) `-a y` an andi run (to get the NJ tree). This step is slow. <br>
 <i>iii</i>) `-r y` a roary run to get the pangenome and associated fripan files (do a `mkdir /home/username/public_html/fripan` before running this option, and clone the fripan code from https://github.com/drpowell/FriPan into this folder).  This step is very slow.<br>  
-As pando uses `mutliprocessing`, assess the load on the server prior to running using `htop`.  Choose a server with a low workload and specify the number of threads acccordingly (`pando.py` defaults to `--threads 72`)<br>
+
+As pando uses `multiprocessing`, assess the load on the server prior to running using `htop`.  Choose a server with a low workload and specify the number of threads acccordingly (`pando.py` defaults to `--threads 72`)<br>
 
 To do a full run:
 ```
