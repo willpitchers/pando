@@ -102,4 +102,4 @@ time nice python pando.py -i isolates_20160913.txt -n 2016-18848 2016-18844 2016
 ```
 
 Whilst running, exit the screen using control+a, d.  Check the progress by `tail screenlog.0`, `htop -u username` or going back into the screen with `screen -r pando`. <br>
-Kill the screen process ID (`PID`) using `top` or enter the screen, hit control+c then control+d (this latter option might not work if `pando` is in the middle of a multiprocessing loop).  Rename the `screenlog.0` file at the end of the run if you would like to store it for future reference (else it may be overwritten). 
+Kill the screen process ID (`PID`) using `top` or enter the screen, hit control+c then control+d (this latter option might not work if `pando` is in the middle of a multiprocessing loop).  Rename the `screenlog.0` file at the end of the run if you would like to store it for future reference (else it may be overwritten).  If all this fails and you want to kill your job now, use `killall --user username` (but this will kill everything you are running and log you out of the server).
