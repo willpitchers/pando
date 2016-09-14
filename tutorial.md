@@ -83,12 +83,7 @@ To start a screen log that saves the stdout to text file, use the keystroke
 Control+a, shift+H.  Toggle the screenlog.0 off with the same keystroke.   
 
 ## 2. Running the job request using pando
-Test the command without actually running the job:
-```
-time nice python pando.py -i isolates_20160913.txt -n 2016-18848 2016-18844 2016-18808 2016-18697 2016-18648 -x CPE_ongoing_2010913.xlsx
-```
-
-There a three options to run pando (each can be run individually, by default each is set to `off`).  Switch on an option with `yes`:
+There a three options to run pando (each can be run individually, by default each is set to `off`).  Switch an option on with `yes`:
 
 <i>i</i>) `-m y` a metadata only run (will create a metadata super-matrix for all isolates in the analysis and report those that were missing). This step is fast.<br>
 <i>ii</i>) `-a y` an andi run (to get the NJ tree). This step is slow. <br>
@@ -96,9 +91,15 @@ There a three options to run pando (each can be run individually, by default eac
 
 As pando uses `multiprocessing`, assess the load on the server prior to running using `htop`.  Choose a server with a low workload and specify the number of threads acccordingly (`pando.py` defaults to `--threads 72`)<br>
 
+Test the command without actually running the job:
+```
+time nice python pando.py -i isolates_20160913.txt -n 2016-18848 2016-18844 2016-18808 2016-18697 2016-18648 -x CPE_ongoing_2010913.xlsx
+```
+
 To do a full run:
 ```
 time nice python pando.py -i isolates_20160913.txt -n 2016-18848 2016-18844 2016-18808 2016-18697 2016-18648 -x CPE_ongoing_2010913.xlsx -m y -a y -r y
 ```
+
 Whilst running, exit the screen using control+a, d.  Check the progress by `tail screenlog.0`, `htop -u username` or going back into the screen with `screen -r pando`. <br>
 Kill the screen process ID (`PID`) using `top` or enter the screen, hit control+c then control+d (this latter option might not work if `pando` is in the middle of a multiprocessing loop).  Rename the `screenlog.0` file at the end of the run if you would like to store it for future reference (else it may be overwritten). 
