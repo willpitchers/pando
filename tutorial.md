@@ -85,7 +85,7 @@ Control+a, shift+H.  Toggle the screenlog.0 off with the same keystroke.
 ## 2. Running the job request using pando
 There a three options to run pando (each can be run individually, by default each is set to `off`).  Switch an option on with `yes`:
 
-<i>i</i>) `-m y` a metadata only run (will create a metadata super-matrix for all isolates in the analysis and report those that were missing). This step is fast.<br>
+<i>i</i>) `-m y` a metadata only run (will create a metadata super-matrix for all isolates in the analysis and report those that were missing). This step is fast: for example, with 8868 isolates this step was completed in 73 mins using 72 cores.<br>
 <i>ii</i>) `-a y` an andi run (to get the NJ tree). This step is slow. <br>
 <i>iii</i>) `-r y` a roary run to get the pangenome and associated fripan files (do a `mkdir /home/username/public_html/fripan` before running this option, and clone the fripan code from https://github.com/drpowell/FriPan into this folder).  This step is very slow.<br>  
 
