@@ -577,10 +577,10 @@ def main():
         #Store key,value as original_name,short_id for later retrieval.
         iso_ID_trans[iso] = short_id
         if 'y' in ARGS.andi_run.lower():
-            cmd = 'cp '+assembly_path+' '+assembly_tempdir+'/'+short_id+\
+            cmd = 'ln -s '+assembly_path+' '+assembly_tempdir+'/'+short_id+\
                   '_contigs.fa'
             os.system(cmd)
-            print 'Performing copy:', cmd
+            print 'Creating symlink:', cmd
     with open(base+'_temp_names.txt', 'w') as tmp_names:
         print '\nTranslated isolate IDs:\nShort\tOriginal'
         for key, value in iso_ID_trans.items():
@@ -856,7 +856,7 @@ def main():
                 wd = os.getcwd()
                 os.chdir(base+'_'+k+'_roary')
                 os.system('python ../collapseSites.py -f core_gene_alignment.aln -i fasta -t '+str(ARGS.threads))
-                os.system('FastTree -nt -gtr < core_gene_alignment_collapsed.fasta > core_gene_FastTree_SNPs.tre')
+                os.system('FastTree -nt -gtr < core_gene_alignment_collapsed.fasta > core_gene_FastTree_SNVs.tre')
 
                 #calc pairwise snp dist and write to file
                 with open('core_gene_alignment_collapsed.fasta', 'r') as inf:
