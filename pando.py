@@ -816,6 +816,7 @@ def main():
         #Run Roary on the species_consensus subsets.
         print 'Now, let\'s run roary!'
         for k, v in isos_grouped_by_cons_spp.items():
+            print k, v
             n_isos = len(v)
             if n_isos > 1:
                 shutil.rmtree(base+'_'+k+'_roary', ignore_errors=True)
