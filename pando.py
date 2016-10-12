@@ -670,8 +670,13 @@ def main():
                                       'Species identification (MALDI-TOF)']
                 sp_id_subm = xls_table.loc[iso_nosuffix,
                                            'Species identification (Subm. lab)']
+                PCR_resgenes = xls_table.loc[iso_nosuffix,
+                                             'Final resist genes/alleles']
+                PCR_resgenes = str(PCR_resgenes)
+                PCR_resgenes = PCR_resgenes.replace(',', ';')
                 lims = {'sp_LIMS_MALDI-Tof': maldi, 'sp_LIMS_SubmLab':
-                        sp_id_subm, 'LIMS_Submitter': submitter}
+                        sp_id_subm, 'LIMS_Submitter': submitter,
+                        'Final_resgenes_PCR': PCR_resgenes}
                 lims_df = pd.DataFrame([lims], index=[iso])
                 while c < 1:
                     print 'LIMS metadata added to collection...'
@@ -857,25 +862,26 @@ def main():
                 wd = os.getcwd()
                 os.chdir(base+'_'+k+'_roary')
                 os.system('python ../collapseSites.py -f core_gene_alignment.aln -i fasta -t '+str(ARGS.threads))
-                os.system('FastTree -nt -gtr < core_gene_alignment_collapsed.fasta > core_gene_FastTree_SNVs.tre')
+                if os.path.exists('core_gene_alignment_collapsed.fasta'):
+                    os.system('FastTree -nt -gtr < core_gene_alignment_collapsed.fasta > core_gene_FastTree_SNVs.tre')
 
-                #calc pairwise snp dist and write to file
-                with open('core_gene_alignment_collapsed.fasta', 'r') as inf:
-                    aln = AlignIO.read(inf, 'fasta')
-                    pairs = []
-                    for i in range(0,len(aln)):
-                        lst = [(aln, i, j) for j in range(0, i+1)]
-                        pairs.append(lst)
-                    if len(pairs) <= ARGS.threads:
-                        p = Pool(len(pairs))
-                    else:
-                        p = Pool(ARGS.threads)
-                    print 'Running pw comparisons in parallel...'
-                    result = p.map(pw_calc, pairs)
-                    summary = pd.concat(result, axis=0)
-                    summary.fillna('', inplace=True)
-                    with open('core_gene_alignment_SNV_distances.tab', 'w') as distmat:
-                        summary.to_csv(distmat, mode='w', sep='\t', index=True, index_label='name')
+                    #calc pairwise snp dist and write to file
+                    with open('core_gene_alignment_collapsed.fasta', 'r') as inf:
+                        aln = AlignIO.read(inf, 'fasta')
+                        pairs = []
+                        for i in range(0,len(aln)):
+                            lst = [(aln, i, j) for j in range(0, i+1)]
+                            pairs.append(lst)
+                        if len(pairs) <= ARGS.threads:
+                            p = Pool(len(pairs))
+                        else:
+                            p = Pool(ARGS.threads)
+                        print 'Running pw comparisons in parallel...'
+                        result = p.map(pw_calc, pairs)
+                        summary = pd.concat(result, axis=0)
+                        summary.fillna('', inplace=True)
+                        with open('core_gene_alignment_SNV_distances.tab', 'w') as distmat:
+                            summary.to_csv(distmat, mode='w', sep='\t', index=True, index_label='name')
 
                 #convert roary output to fripan compatible
                 os.system('python ../roary2fripan.py '+base+'_'+k)
