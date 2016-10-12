@@ -273,7 +273,7 @@ class Isolate(object):
         Get the kraken best hit from reads.
         '''
         #Pipe these commands together
-        cmd_grep = "grep -P '\tS\t' /mnt/seq/MDU/QC/"+self.ID+"/kraken.tab"
+        cmd_grep = "grep -P '\tS\t' "+ARGS.wgs_qc+'/'+self.ID+"/kraken.tab"
         cmd_sort = 'sort -k 1 -r'
         cmd_head = 'head -3'
 
@@ -298,7 +298,7 @@ class Isolate(object):
         '''
         #Pipe these commands together
         cmd_kraken = 'nice kraken --threads 2 --db /bio/db/kraken/minikraken'+\
-                     ' --fasta-input /mnt/seq/MDU/QC/'+self.ID+'/contigs.fa'
+                     ' --fasta-input '+ARGS.wgs_qc+'/'+self.ID+'/contigs.fa'
         cmd_krk_r = 'kraken-report'
         cmd_grep = "grep -P '\tS\t'"
         cmd_sort = 'sort -k 1 -r'
