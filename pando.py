@@ -670,13 +670,14 @@ def main():
                                       'Species identification (MALDI-TOF)']
                 sp_id_subm = xls_table.loc[iso_nosuffix,
                                            'Species identification (Subm. lab)']
-                PCR_resgenes = xls_table.loc[iso_nosuffix,
-                                             'Final resist genes/alleles']
-                PCR_resgenes = str(PCR_resgenes)
-                PCR_resgenes = PCR_resgenes.replace(',', ';')
+#                PCR_resgenes = xls_table.loc[iso_nosuffix,
+#                                             'Final resist genes/alleles']
+#                PCR_resgenes = str(PCR_resgenes)
+#                PCR_resgenes = PCR_resgenes.replace(',', ';')
                 lims = {'sp_LIMS_MALDI-Tof': maldi, 'sp_LIMS_SubmLab':
-                        sp_id_subm, 'LIMS_Submitter': submitter,
-                        'Final_resgenes_PCR': PCR_resgenes}
+                        sp_id_subm, 'LIMS_Submitter': submitter#,
+                        #'Final_resgenes_PCR': PCR_resgenes
+                       }
                 lims_df = pd.DataFrame([lims], index=[iso])
                 while c < 1:
                     print 'LIMS metadata added to collection...'
