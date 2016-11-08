@@ -3,7 +3,7 @@
 With a file of isolate IDs as input, compile all results (abricate, kraken, mlst, contig and read metrics, LIMS metadata) into a single super-matrix.  Options (all default to 'don't run'): infer an NJ tree using the alignment-free Andi phylogenomic software; gather metdata for all isolates; run roary on the isolate set (have a prokka folder in the rundir to save computation time).  Use a method of choice for displaying the metadata next to the tree (e.g. we recommend [phandango](https://jameshadfield.github.io/phandango/) (web based) and [FigTree](http://tree.bio.ed.ac.uk/software/figtree/) (installed locally on your machine)).  Can Use it to run roary too.  Can switch on/off roary or andi or both.  
 
 ### Example run command on MDU servers:
-`time nice python pando.py -i file_of_mdu-isolate_IDs.txt -e recipient@unimelb.edu.au -j job_2467 -n 2016-15949 2016-15442 -x CPE_ongoing_20160801.xlsx`
+`time nice python pando.py -i file_of_mdu-isolate_IDs.txt -n 2016-15949 2016-15442 -x CPE_ongoing_20160801.xlsx -m y`
 
 ### Minimum run command:
 `python pando.py -i file_of_mdu-isolate_IDs.txt`
