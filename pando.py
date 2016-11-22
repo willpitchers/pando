@@ -376,7 +376,7 @@ def get_isolate_request_IDs(ID_file):
     Reads in the MDU IDs from the request IDs file and returns IDs as a list.
     ID file must contain only one ID per line.
     '''
-    IDs = filter(None, [ID.rstrip() for ID in open(ID_file, 'r').readlines()])
+    IDs = list(set(filter(None, [ID.rstrip() for ID in open(ID_file, 'r').readlines()])))
     return IDs
 
 def new_IDs(IDs):
