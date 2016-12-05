@@ -59,7 +59,7 @@ import pandas as pd
 from ete3 import Tree
 
 
-VERSION = 'pando version 2.3.3'
+VERSION = 'pando version 2.3.4'
 
 
 # set up the arguments parser to deal with the command line input
@@ -179,17 +179,6 @@ class Isolate(object):
         '''
         pass
 
-    def abricate_path(self):
-        '''
-        Where are the abricate results? Return the path.
-        '''
-        abricate_path = ARGS.wgs_qc+self.ID+'/abricate.tab'
-        if os.path.exists(abricate_path):
-            return abricate_path
-        else:
-            print abricate_path+' not found'
-            return None
-
     def abricate(self):
         '''
         Store the path to abricate results.
@@ -197,24 +186,25 @@ class Isolate(object):
         abricate_path = ARGS.wgs_qc+self.ID+'/abricate.tab'
         if os.path.exists(abricate_path):
             ab_data = pd.read_table(abricate_path, sep='\t', header=0)
-            nrows = ab_data.shape[0]
-            genes = ab_data['GENE'].tolist()
-            cov = ab_data['%COVERAGE'].tolist()
-            yes = []
-            maybe = []
-            for i in range(0, nrows):
-                if cov[i] >= ARGS.percent_cutoff:
-                    yes.append('resgene_'+genes[i])
-                else:
-                    maybe.append('resgene_'+genes[i])
-            y = {key:'yes' for (key) in yes}
-            m = {key: 'maybe' for (key) in maybe}
-            #Join dictionaries m and y to form ab_results
-            ab_results = dict(itertools.chain(y.iteritems(), m.iteritems()))
-            #Convert to pandas dataframe
-            abricate_results = pd.DataFrame([ab_results], index=[self.ID])
-        else: #todo: If the path doesn't exist, run abricate.
-            pass
+        else: #run abricate.
+            os.system('abricate '+ARGS.wgs_qc+self.ID+'/contigs.fa > '+abricate_path)
+            ab_data = pd.read_table(abricate_path, sep='\t', header=0)
+        nrows = ab_data.shape[0]
+        genes = ab_data['GENE'].tolist()
+        cov = ab_data['%COVERAGE'].tolist()
+        yes = []
+        maybe = []
+        for i in range(0, nrows):
+            if cov[i] >= ARGS.percent_cutoff:
+                yes.append('resgene_'+genes[i])
+            else:
+                maybe.append('resgene_'+genes[i])
+        y = {key:'yes' for (key) in yes}
+        m = {key: 'maybe' for (key) in maybe}
+        #Join dictionaries m and y to form ab_results
+        ab_results = dict(itertools.chain(y.iteritems(), m.iteritems()))
+        #Convert to pandas dataframe
+        abricate_results = pd.DataFrame([ab_results], index=[self.ID])
         return abricate_results
 
     def mlst(self, species, assembly):
