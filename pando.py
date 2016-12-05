@@ -120,6 +120,7 @@ FORCE_MLST_SCHEME = {"Acinetobacter baumannii": "abaumannii",
                      #"Klebsiella oxytoca": "koxytoca",
                      #"Klebsiella pneumoniae": "kpneumoniae",
                      #"Pseudomonas aeruginosa": "paeruginosa"
+                     "Shigella sonnei": "ecoli"
                     }
 
 
