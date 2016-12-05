@@ -181,14 +181,24 @@ class Isolate(object):
 
     def abricate(self):
         '''
-        Store the path to abricate results.
+        Get abricate results or run abricate.
         '''
-        abricate_path = ARGS.wgs_qc+self.ID+'/abricate.tab'
+        wd = ARGS.wgs_qc+self.ID
+        abricate_path = wd+'/abricate.tab'
         if os.path.exists(abricate_path):
             ab_data = pd.read_table(abricate_path, sep='\t', header=0)
         else: #run abricate.
-            os.system('abricate '+ARGS.wgs_qc+self.ID+'/contigs.fa > '+abricate_path)
-            ab_data = pd.read_table(abricate_path, sep='\t', header=0)
+            abricate_outfolder = 'abricate/'+self.ID
+            abricate_outfile = abricate_outfolder+'/abricate.tab'
+            contigs_path = wd+'/contigs.fa'
+            if os.path.exists(abricate_outfile):
+                pass
+            else:
+                if os.path.exists(contigs_path):
+                    print 'running abricate for', self.ID
+                    os.system('mkdir -p '+abricate_outfolder)
+                    os.system('abricate '+contigs_path+' > '+abricate_outfile)
+            ab_data = pd.read_table(abricate_outfile, sep='\t', header=0)
         nrows = ab_data.shape[0]
         genes = ab_data['GENE'].tolist()
         cov = ab_data['%COVERAGE'].tolist()
