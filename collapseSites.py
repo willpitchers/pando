@@ -62,9 +62,10 @@ def summary_aln(aln_params):
     variant_cols = []
     for s in variant_sites:
         variant_cols.append(alignment[:,s:s+1])
-    aln = MultipleSeqAlignment(variant_cols[0])
-    for t in variant_cols[1:]:
-        aln += t
+    if len(variant_cols) > 0:
+        aln = MultipleSeqAlignment(variant_cols[0])
+        for t in variant_cols[1:]:
+            aln += t
     return aln
 
 
