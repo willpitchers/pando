@@ -66,7 +66,10 @@ def summary_aln(aln_params):
         aln = MultipleSeqAlignment(variant_cols[0])
         for t in variant_cols[1:]:
             aln += t
-    return aln
+        return aln
+#     else:
+#         break
+#     return aln
 
 
 def read_collapse(infile, informat):
@@ -91,7 +94,8 @@ def read_collapse(infile, informat):
             aln_ranges.append((alignment, c, aln_len))
         print 'Processing the alignment in parallel to find variant sites.'
         p = Pool(ARGS.threads)
-        results = p.map(summary_aln, aln_ranges)
+        results = filter(None, p.map(summary_aln, aln_ranges))
+        print results
         aln = MultipleSeqAlignment(results[0])
         for i in results:
             aln += i
