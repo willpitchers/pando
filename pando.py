@@ -59,7 +59,7 @@ import pandas as pd
 from ete3 import Tree
 
 
-VERSION = 'pando version 2.3.4'
+VERSION = 'pando version 2.3.5'
 
 
 # set up the arguments parser to deal with the command line input
@@ -102,16 +102,22 @@ PARSER.add_argument('-x', '--excel_spreadsheet', help='Parse excel spreadsheet\
                     \'Species identification (MALDI-TOF)\',\
                     \'Species identification (Subm. lab)\' and \'Submitter\'.',
                     required=False)
+PARSER.add_argument('-v', '--version', help='Print version number and exit.\
+                    Default \'False\'', default=False, action="store_true",
+                    required=False)
 
 ARGS = PARSER.parse_args()
 
-
+if ARGS.version:
+    print 'This is '+VERSION
+    sys.exit()
 if ARGS.threads > 72:
     print 'Number of requested threads must be less than 72. Exiting now.'
     sys.exit()
 print '\nStarting '+VERSION+'...'
 print str(ARGS.threads) +' CPU processes requested.'
 
+#Set up the file names for Nullarbor folder structure
 YIELD_FILE = 'yield.tab'
 MLST_FILE = 'mlst.tab'
 if ARGS.Nullarbor_folders == True:
@@ -119,6 +125,7 @@ if ARGS.Nullarbor_folders == True:
     YIELD_FILE = 'yield.clean.tab'
     MLST_FILE = 'mlst2.tab'
 
+#Check if final slash in manually specified wgs_qc path
 if ARGS.wgs_qc[-1] != '/':
     print '\n-wgs_qc path is entered as '+ARGS.wgs_qc
     print 'You are missing a final \'/\' on this path.'
@@ -263,7 +270,6 @@ class Isolate(object):
                 k += 1
         else:
             mlst_tab = ARGS.wgs_qc+self.ID+'/'+MLST_FILE
-            print mlst_tab
             run_mlst_again = False
             if os.path.exists(mlst_tab):
                 mlst = [line.rstrip().split('\t') for line in
