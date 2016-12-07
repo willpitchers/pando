@@ -11,7 +11,7 @@ Specific for MDU folder structures and QC
 Optionally run roary analysis.
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20161012_2300
+YYYMMDD_HHMM: 20161207_1646
 
 Acknowledgements:
 Torsten Seemann (pando relies heavily on Torsten's tools)
