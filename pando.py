@@ -118,7 +118,7 @@ if ARGS.Nullarbor_folders == True:
     print 'Nullarbor folder structure selected.'
     YIELD_FILE = 'yield.clean.tab'
     MLST_FILE = 'mlst2.tab'
-    
+
 if ARGS.wgs_qc[-1] != '/':
     print '\n-wgs_qc path is entered as '+ARGS.wgs_qc
     print 'You are missing a final \'/\' on this path.'
@@ -263,16 +263,21 @@ class Isolate(object):
                 k += 1
         else:
             mlst_tab = ARGS.wgs_qc+self.ID+'/'+MLST_FILE
+            print mlst_tab
+            run_mlst_again = False
             if os.path.exists(mlst_tab):
                 mlst = [line.rstrip().split('\t') for line in
                         open(mlst_tab).readlines()][0]
+                if 'SCHEME' in mlst:
+                    #This would mean the old version of MLST was used
+                    run_mlst_again = True
                 mlst_formatted_dict = {'MLST_Scheme': mlst[1],
                                        'MLST_ST': mlst[2]}
                 k = 1
                 for i in range(3, len(mlst)):
                     mlst_formatted_dict['MLST_Locus'+str(k)] = mlst[i]
                     k += 1
-            else:
+            if run_mlst_again or os.path.exists(mlst_tab) == False:
                 cmd = 'mlst --quiet '+assembly
                 args_mlst = shlex.split(cmd)
                 proc = Popen(args_mlst, stdout=PIPE)
