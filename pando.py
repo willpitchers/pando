@@ -134,7 +134,7 @@ if ARGS.wgs_qc[-1] != '/':
 
 #Add MLST schemes to force their usage if that species is encountered
 #Only force schemes if there are two (e.g., A baumannii and E coli)
-FORCE_MLST_SCHEME = {"Acinetobacter baumannii": "abaumannii",
+FORCE_MLST_SCHEME = {"Acinetobacter baumannii": "abaumannii_2",
                      "Campylobacter jejuni": "campylobacter",
                      #"Citrobacter freundii": "cfreundii",
                      #"Cronobacter": "cronobacter",
