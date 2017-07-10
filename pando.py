@@ -251,7 +251,7 @@ class Isolate(object):
         if using a Nullarbor folder structure.
         '''
         if species in FORCE_MLST_SCHEME:
-            cmd = 'mlst --scheme '+FORCE_MLST_SCHEME[species]+' --quiet '+\
+            cmd = 'mlst --legacy --scheme '+FORCE_MLST_SCHEME[species]+' --quiet '+\
                    assembly
             args_mlst = shlex.split(cmd)
             #should write a proc function to do this call as it's used often
