@@ -11,7 +11,7 @@ Specific for MDU folder structures and QC
 Optionally run roary analysis.
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20161207_1646
+YYYMMDD_HHMM: 20160631
 
 Acknowledgements:
 Torsten Seemann (pando relies heavily on Torsten's tools)
@@ -59,7 +59,7 @@ import pandas as pd
 from ete3 import Tree
 
 
-VERSION = 'pando version 2.3.5'
+VERSION = 'pando version 2.3.6'
 
 
 # set up the arguments parser to deal with the command line input
