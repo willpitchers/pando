@@ -672,7 +672,7 @@ def main():
         #per job.
         results_abricate = p.map(abricate_multiprocessing, isos)
         res_all_abricate = pd.concat(results_abricate, axis=0)
-        res_all_abricate.fillna('.', inplace=True)
+        res_all_abricate.fillna('', inplace=True)
         print 'Resistome hits gathered from abricate.tab files...'
 
         #append the dfs to the summary list of dfs
