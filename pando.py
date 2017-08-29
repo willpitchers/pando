@@ -115,7 +115,7 @@ if ARGS.threads > 72:
     print 'Number of requested threads must be less than 72. Exiting now.'
     sys.exit()
 print '\nStarting '+VERSION+'...'
-print str(ARGS.threads) +' CPU processes requested.'
+print str(ARGS.threads) +' CPU processors requested.'
 
 #Set up the file names for Nullarbor folder structure
 YIELD_FILE = 'yield.tab'
