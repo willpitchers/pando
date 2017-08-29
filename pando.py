@@ -747,7 +747,7 @@ def main():
         #Finish up with everything in one table!
         metadata_overall = pd.concat([summary_isos_df, summary_frames_df],
                                      axis=1)
-        metadata_overall.fillna('.', inplace=True)
+        metadata_overall.fillna('', inplace=True)
         print '\nMetadata super-matrix:'
         print metadata_overall
         #Write this supermatrix (metadata_overall) to csv and tab/tsv
