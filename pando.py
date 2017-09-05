@@ -751,9 +751,9 @@ def main():
         print '\nMetadata super-matrix:'
         print metadata_overall
         #Write this supermatrix (metadata_overall) to csv and tab/tsv
-        csv = base+'_metadataAll.csv'
-        tsv = base+'_metadataAll.tab'
-        json = base+'_metadataAll.json'
+        csv = os.path.abspath(base+'_metadataAll.csv')
+        tsv = os.path.abspath(base+'_metadataAll.tab')
+        json = os.path.abspath(base+'_metadataAll.json')
         metadata_overall.to_csv(csv, mode='w', index=True, index_label='name')
         metadata_overall.to_csv(tsv, mode='w', sep='\t', index=True,
                                 index_label='name')
