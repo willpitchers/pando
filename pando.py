@@ -109,27 +109,27 @@ PARSER.add_argument('-v', '--version', help='Print version number and exit.\
 ARGS = PARSER.parse_args()
 
 if ARGS.version:
-    print 'This is '+VERSION
+    print('This is '+VERSION)
     sys.exit()
 if ARGS.threads > 72:
-    print 'Number of requested threads must be less than 72. Exiting now.'
+    print('Number of requested threads must be less than 72. Exiting now.')
     sys.exit()
-print '\nStarting '+VERSION+'...'
-print str(ARGS.threads) +' CPU processors requested.'
+print('\nStarting '+VERSION+'...')
+print(str(ARGS.threads) +' CPU processors requested.')
 
 #Set up the file names for Nullarbor folder structure
 YIELD_FILE = 'yield.tab'
 MLST_FILE = 'mlst.tab'
 if ARGS.Nullarbor_folders == True:
-    print 'Nullarbor folder structure selected.'
+    print('Nullarbor folder structure selected.')
     YIELD_FILE = 'yield.clean.tab'
     MLST_FILE = 'mlst2.tab'
 
 #Check if final slash in manually specified wgs_qc path
 if ARGS.wgs_qc[-1] != '/':
-    print '\n-wgs_qc path is entered as '+ARGS.wgs_qc
-    print 'You are missing a final \'/\' on this path.'
-    print 'Exiting now.\n'
+    print('\n-wgs_qc path is entered as '+ARGS.wgs_qc)
+    print('You are missing a final \'/\' on this path.')
+    print('Exiting now.\n')
     sys.exit()
 
 #Add MLST schemes to force their usage if that species is encountered
@@ -172,7 +172,7 @@ class Isolate(object):
         if os.path.exists(isolate_qc_contigs):
             return isolate_qc_contigs
         else:
-            print isolate_qc_contigs+' does not exist'
+            print(isolate_qc_contigs+' does not exist')
 
     def assembly_metrics(self):
         '''
@@ -184,7 +184,7 @@ class Isolate(object):
                    '_metrics.txt').readlines()]
         metrics = [i[1:] for i in metrics]
         metrics[0] = ['metricsContigs_'+i for i in metrics[0]]
-        metrics = dict(zip(metrics[0], metrics[1]))
+        metrics = dict(list(zip(metrics[0], metrics[1])))
         os.system('rm '+self.ID+'_metrics.txt')
         metrics_df = pd.DataFrame([metrics], index=[self.ID])
         return metrics_df
@@ -221,7 +221,7 @@ class Isolate(object):
                 pass
             else:
                 if os.path.exists(contigs_path):
-                    print 'running abricate for', self.ID
+                    print('running abricate for', self.ID)
                     os.system('mkdir -p '+abricate_outfolder)
                     os.system('abricate '+contigs_path+' > '+abricate_outfile)
             ab_data = pd.read_table(abricate_outfile, sep='\t', header=0)
@@ -238,7 +238,7 @@ class Isolate(object):
         y = {key:'yes' for (key) in yes}
         m = {key: 'maybe' for (key) in maybe}
         #Join dictionaries m and y to form ab_results
-        ab_results = dict(itertools.chain(y.iteritems(), m.iteritems()))
+        ab_results = dict(itertools.chain(iter(y.items()), iter(m.items())))
         #Convert to pandas dataframe
         abricate_results = pd.DataFrame([ab_results], index=[self.ID])
         return abricate_results
@@ -258,7 +258,7 @@ class Isolate(object):
             proc = Popen(args_mlst, stdout=PIPE)
             output = proc.stdout.read()
             mlst = output.rstrip().split('\n')
-            mlst = [line.strip().split('\t') for line in filter(None, mlst)]
+            mlst = [line.strip().split('\t') for line in [_f for _f in mlst if _f]]
             header = mlst[0]
             data = mlst[1]
             ncol = len(header)
@@ -320,7 +320,7 @@ class Isolate(object):
 
         output = proc3.stdout.read()
         kraken = output.rstrip().split('\n')
-        kraken = [line.strip().split('\t') for line in filter(None, kraken)]
+        kraken = [line.strip().split('\t') for line in [_f for _f in kraken if _f]]
         return kraken
 
     def kraken_contigs(self):
@@ -352,7 +352,7 @@ class Isolate(object):
 
         output = proc5.stdout.read()
         kraken = output.rstrip().split('\n')
-        kraken = [line.strip().split('\t') for line in filter(None, kraken)]
+        kraken = [line.strip().split('\t') for line in [_f for _f in kraken if _f]]
         return kraken
 
     def prokka_contigs(self):
@@ -396,7 +396,7 @@ def lower_tri(full_matrix):
     names = []
     k = 2
     for i in full_matrix:
-        lower_triangle.append(map(float, i[1:k]))
+        lower_triangle.append(list(map(float, i[1:k])))
         names.append(i[0])
         k += 1
     matrix = _DistanceMatrix(names, lower_triangle)
@@ -407,7 +407,7 @@ def get_isolate_request_IDs(ID_file):
     Reads in the MDU IDs from the request IDs file and returns IDs as a list.
     ID file must contain only one ID per line.
     '''
-    IDs = list(set(filter(None, [ID.rstrip() for ID in open(ID_file, 'r').readlines()])))
+    IDs = list(set([_f for _f in [ID.rstrip() for ID in open(ID_file, 'r').readlines()] if _f]))
     return IDs
 
 def new_IDs(IDs):
@@ -439,14 +439,14 @@ def isolates_available(IDs):
     #Use this set function to remove any duplicates
     avail = sorted(list(set(avail)))
     if len(avail) > 0:
-        print '\nFound folders with the following IDs:'
-        print '\n'.join(avail)
+        print('\nFound folders with the following IDs:')
+        print('\n'.join(avail))
     not_avail = sorted(list(set(not_avail)))
     if len(not_avail) > 0:
         outf = os.path.splitext(ARGS.mdu_read_IDs)[0]+'_not_found.txt'
         with open(outf, 'w') as not_found:
             not_found.write('\n'.join(not_avail))
-        print '\nCould not find IDs:\n', '\n'.join(not_avail)+'\n'
+        print('\nCould not find IDs:\n', '\n'.join(not_avail)+'\n')
     return avail
 
 def kraken_contigs_multiprocessing(iso):
@@ -515,9 +515,9 @@ def excel_metadata(xlsx_file):
     Read in an excel spreadsheet.
     '''
     xlsx = pd.read_excel(xlsx_file, skiprows=4, index_col=0)
-    print 'Excel spreadsheet:\n'
-    print xlsx
-    print ''
+    print('Excel spreadsheet:\n')
+    print(xlsx)
+    print('')
     return xlsx
 
 def prokka(params):
@@ -527,7 +527,7 @@ def prokka(params):
     (x, y) = params
     ID = Isolate(x)
     cmd = ID.prokka_contigs() % y
-    print cmd
+    print(cmd)
     os.system(cmd)
 
 def roary(base, sp, gffs):
@@ -536,7 +536,7 @@ def roary(base, sp, gffs):
     '''
     cmd = 'nice roary -f '+base+'_'+sp+'_roary -e -n -v -z -p '+\
           str(ARGS.threads)+' '+gffs
-    print '\nRunning roary for '+sp+' with the command:\n'+cmd
+    print('\nRunning roary for '+sp+' with the command:\n'+cmd)
     os.system(cmd)
 
 def pw_calc(aln_seq_coords):
@@ -546,7 +546,7 @@ def pw_calc(aln_seq_coords):
     df_dist = []
     for m in aln_seq_coords:
         (aln, i, j) = m
-        print i, j
+        print(i, j)
         name = aln[i].id
         x = len([y for y in zip(aln[i].seq,
                 aln[j].seq) if len(set(y)) > 1 and 'N' not in set(y) and '-' not in set(y) and '?' not in set(y)])
@@ -612,26 +612,26 @@ def main():
             cmd = 'ln -s '+assembly_path+' '+assembly_tempdir+'/'+short_id+\
                   '_contigs.fa'
             os.system(cmd)
-            print 'Creating symlink:', cmd
-    if len(iso_ID_trans.items()) > 0:
+            print('Creating symlink:', cmd)
+    if len(list(iso_ID_trans.items())) > 0:
         with open(base+'_temp_names.txt', 'w') as tmp_names:
-            print '\nTranslated isolate IDs:\nShort\tOriginal'
-            for key, value in iso_ID_trans.items():
-                print value+'\t'+key
+            print('\nTranslated isolate IDs:\nShort\tOriginal')
+            for key, value in list(iso_ID_trans.items()):
+                print(value+'\t'+key)
                 tmp_names.write(value+'\t'+key+'\n')
     run_metadata = False
     if 'y' in ARGS.metadata_run.lower() or 'y' in ARGS.roary_run.lower():
         run_metadata = True
         if 'y' in ARGS.roary_run.lower():
-            print '\nRun roary requested, but we first need to run the'+\
-                   ' metadata analysis.  Let\'s go!'
+            print('\nRun roary requested, but we first need to run the'+\
+                   ' metadata analysis.  Let\'s go!')
     if run_metadata:
        #summary_frames will store all of the metaDataFrames herein
         summary_frames = []
         n_isos = len(isos)
         if n_isos == 0:
-            print '\nNo isolates detected in the path '+ARGS.wgs_qc+'.'
-            print 'Exiting now.\n'
+            print('\nNo isolates detected in the path '+ARGS.wgs_qc+'.')
+            print('Exiting now.\n')
             sys.exit()
         #Kraken set at 2 threads, so 36 processes can run on 72 CPUs
         #Create a pool 'p' of size based on number of isolates (n_isos)
@@ -639,11 +639,11 @@ def main():
             p = Pool(n_isos)
         else:
             p = Pool(ARGS.threads//2)
-        print '\nRunning kraken on the assemblies (SPAdes contigs.fa files):'
+        print('\nRunning kraken on the assemblies (SPAdes contigs.fa files):')
         results_k_cntgs = p.map(kraken_contigs_multiprocessing, isos)
         #concat the dataframe objects
         res_k_cntgs = pd.concat(results_k_cntgs, axis=0)
-        print '\nKraken_contigs results gathered from kraken on contigs...'
+        print('\nKraken_contigs results gathered from kraken on contigs...')
 
         #Multiprocessor retrieval of kraken results on reads.  Single thread
         #per job.
@@ -654,26 +654,26 @@ def main():
         results_k_reads = p.map(kraken_reads_multiprocessing, isos)
         #concat the dataframe objects
         res_k_reads = pd.concat(results_k_reads, axis=0)
-        print 'Kraken_reads results gathered from kraken.tab files...'
+        print('Kraken_reads results gathered from kraken.tab files...')
 
         #Multiprocessor retrieval of contig metrics.  Single process
         #per job.
         results_metrics_contigs = p.map(metricsContigs_multiprocessing, isos)
         res_m_cntgs = pd.concat(results_metrics_contigs, axis=0)
-        print 'Contig metrics gathered using \'fa -t\'...'
+        print('Contig metrics gathered using \'fa -t\'...')
 
         #Multiprocessor retrieval of read metrics.  Single process
         #per job.
         results_metrics_reads = p.map(metricsReads_multiprocessing, isos)
         res_m_reads = pd.concat(results_metrics_reads, axis=0)
-        print 'Read metrics gathered from '+YIELD_FILE+' files...'
+        print('Read metrics gathered from '+YIELD_FILE+' files...')
 
         #Multiprocessor retrieval of abricate results. Single process
         #per job.
         results_abricate = p.map(abricate_multiprocessing, isos)
         res_all_abricate = pd.concat(results_abricate, axis=0)
         res_all_abricate.fillna('', inplace=True)
-        print 'Resistome hits gathered from abricate.tab files...'
+        print('Resistome hits gathered from abricate.tab files...')
 
         #append the dfs to the summary list of dfs
         summary_frames.append(res_k_cntgs)
@@ -715,7 +715,7 @@ def main():
                         #'Final_resgenes_PCR': PCR_resgenes}
                 lims_df = pd.DataFrame([lims], index=[iso])
                 while c < 1:
-                    print 'LIMS metadata added to collection...'
+                    print('LIMS metadata added to collection...')
                     c += 1
                 iso_df.append(lims_df)
             sample = Isolate(iso)
@@ -738,8 +738,8 @@ def main():
                     iso_df.append(new_iso_df)
             iso_df_pd = pd.concat(iso_df, axis=1)
             summary_isos.append(iso_df_pd)
-        print 'Remaining isolate data gathered (mlst, species consensus,'+\
-              ' flag-if-new)...'
+        print('Remaining isolate data gathered (mlst, species consensus,'+\
+              ' flag-if-new)...')
         #Glue the isolate by isolate metadata into a single df
         summary_isos_df = pd.concat(summary_isos)
         #Glue the dataframes built during multiprocessing processes
@@ -748,8 +748,8 @@ def main():
         metadata_overall = pd.concat([summary_isos_df, summary_frames_df],
                                      axis=1)
         metadata_overall.fillna('', inplace=True)
-        print '\nMetadata super-matrix:'
-        print metadata_overall
+        print('\nMetadata super-matrix:')
+        print(metadata_overall)
         #Write this supermatrix (metadata_overall) to csv and tab/tsv
         csv = os.path.abspath(base+'_metadataAll.csv')
         tsv = os.path.abspath(base+'_metadataAll.tab')
@@ -758,8 +758,8 @@ def main():
         metadata_overall.to_csv(tsv, mode='w', sep='\t', index=True,
                                 index_label='name')
         metadata_overall.to_json(json)
-        print '\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
-              ' isolates written to '+csv+' and '+tsv+'.'
+        print('\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
+              ' isolates written to '+csv+' and '+tsv+'.')
         #Populate the isos_grouped_by_cons_spp dict with isolate IDs
         for k, v in zip(metadata_overall['sp_krkn_ReadAndContigConsensus'],
                         metadata_overall.index):
@@ -772,7 +772,7 @@ def main():
         andi_c = 'nice andi -j -m '+ARGS.model_andi_distance+' -t '+\
                   str(ARGS.threads)+' '+assembly_tempdir+'/*_contigs.fa > '+\
                   andi_mat
-        print '\nRunning andi with: \''+andi_c+'\''
+        print('\nRunning andi with: \''+andi_c+'\'')
         os.system(andi_c)
 
         #Read in the andi dist matrix, convert to lower triangle
@@ -806,14 +806,14 @@ def main():
         t.set_outgroup(t.get_midpoint_outgroup())
         t_out = base+'_andi_NJ_'+ARGS.model_andi_distance+'dist.nwk.tre'
         t.write(format=1, outfile=t_out)
-        print 'Final tree (midpoint-rooted, NJ under '+\
-               ARGS.model_andi_distance+' distance) looks like this:'
+        print('Final tree (midpoint-rooted, NJ under '+\
+               ARGS.model_andi_distance+' distance) looks like this:')
         #Print the ascii tree
-        print t
+        print(t)
         #Remove the temp.tre
         os.remove('temp.tre')
-        print 'Tree (NJ under '+ARGS.model_andi_distance+\
-              ' distance, midpoint-rooted) written to '+t_out+'.'
+        print('Tree (NJ under '+ARGS.model_andi_distance+\
+              ' distance, midpoint-rooted) written to '+t_out+'.')
 
     #Run roary?
     if 'y' in ARGS.roary_run.lower():
@@ -844,20 +844,20 @@ def main():
         params = [(i, 'prokka') for i in isos if not
                   os.path.exists('prokka/'+i)]
         if len(params) > 0:
-            print '\nRunning prokka:'
+            print('\nRunning prokka:')
             if len(params) <= ARGS.threads//2:
                 p = Pool(len(params))
             else:
                 p = Pool(ARGS.threads//2)
             p.map(prokka, params)
         else:
-            print '\nProkka files already exist. Let\'s move on to '+\
-                  'the roary analysis...'
+            print('\nProkka files already exist. Let\'s move on to '+\
+                  'the roary analysis...')
 
         #Run Roary on the species_consensus subsets.
-        print 'Now, let\'s run roary!'
-        for k, v in isos_grouped_by_cons_spp.items():
-            print k, v
+        print('Now, let\'s run roary!')
+        for k, v in list(isos_grouped_by_cons_spp.items()):
+            print(k, v)
             n_isos = len(v)
             if n_isos > 1:
                 shutil.rmtree(base+'_'+k+'_roary', ignore_errors=True)
@@ -883,7 +883,7 @@ def main():
                     t_out = base+'_'+k+\
                             '_roary/accessory_binary_genes_midpoint.nwk.tre'
                     t.write(format=1, outfile=t_out)
-                    print '\nWritten midpoint-rooted roary tree.\n'
+                    print('\nWritten midpoint-rooted roary tree.\n')
                     wd = os.getcwd()
                     os.chdir(base+'_'+k+'_roary')
                     for f_name in glob.glob('*'):
@@ -892,9 +892,9 @@ def main():
                             os.remove(f_name)
                     os.chdir(wd)
                 if n_isos <= 2:
-                    print 'Need more than two isolates to have a meaningful '+\
+                    print('Need more than two isolates to have a meaningful '+\
                           'pangenome tree. No mid-point rooting of the ' +\
-                          'pangenome tree performed.'
+                          'pangenome tree performed.')
                 wd = os.getcwd()
                 os.chdir(base+'_'+k+'_roary')
                 os.system('python ../collapseSites.py -f core_gene_alignment.aln -i fasta -t '+str(ARGS.threads))
@@ -912,7 +912,7 @@ def main():
                             p = Pool(len(pairs))
                         else:
                             p = Pool(ARGS.threads)
-                        print 'Running pw comparisons in parallel...'
+                        print('Running pw comparisons in parallel...')
                         result = p.map(pw_calc, pairs)
                         summary = pd.concat(result, axis=0)
                         summary.fillna('', inplace=True)
@@ -932,26 +932,26 @@ def main():
                 strains_info_out.to_csv(base+'_'+k+'.strains', mode='w',
                                         sep='\t', index=True,
                                         index_label='ID')
-                print 'Updated '+base+'_'+k+'.strains with all metadata.'
+                print('Updated '+base+'_'+k+'.strains with all metadata.')
                 os.system('cp '+base+'_'+k+'* ~/public_html/fripan')
                 os.chdir(wd)
             else:
-                print 'Only one isolate in '+k+'. Need at least 2 isolates '+\
-                      'to run roary.  Moving on...'
+                print('Only one isolate in '+k+'. Need at least 2 isolates '+\
+                      'to run roary.  Moving on...')
 
     #Delete the tempdirs created during the run
     if 'y' in ARGS.delete_tempdirs.lower():
         shutil.rmtree(assembly_tempdir, ignore_errors=True)
-        print '\nDeleted tempdir '+assembly_tempdir+'.'
+        print('\nDeleted tempdir '+assembly_tempdir+'.')
     else:
-        print '\nTempdir '+assembly_tempdir+' not deleted.'
+        print('\nTempdir '+assembly_tempdir+' not deleted.')
 
-    print '\nRun finished.'
-    print '\nExplore your results with phandango and FigTree.'
-    print 'https://jameshadfield.github.io/phandango/'
-    print 'http://tree.bio.ed.ac.uk/software/figtree/'
-    print '\nContact the author at mark.schultz@unimelb.edu.au'
-    print 'Thanks for using \''+VERSION+'\'.\n'
+    print('\nRun finished.')
+    print('\nExplore your results with phandango and FigTree.')
+    print('https://jameshadfield.github.io/phandango/')
+    print('http://tree.bio.ed.ac.uk/software/figtree/')
+    print('\nContact the author at mark.schultz@unimelb.edu.au')
+    print('Thanks for using \''+VERSION+'\'.\n')
 
 
 if __name__ == '__main__':
