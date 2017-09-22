@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 
 '''
@@ -11,7 +11,7 @@ Specific for MDU folder structures and QC
 Optionally run roary analysis.
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD_HHMM: 20160631
+YYYMMDD: 20170922
 
 Acknowledgements:
 Torsten Seemann (pando relies heavily on Torsten's tools)
@@ -256,7 +256,7 @@ class Isolate(object):
             args_mlst = shlex.split(cmd)
             #should write a proc function to do this call as it's used often
             proc = Popen(args_mlst, stdout=PIPE)
-            output = proc.stdout.read()
+            output = proc.stdout.read().decode('UTF-8')
             mlst = output.rstrip().split('\n')
             mlst = [line.strip().split('\t') for line in [_f for _f in mlst if _f]]
             header = mlst[0]
@@ -287,7 +287,7 @@ class Isolate(object):
                 cmd = 'mlst --quiet '+assembly
                 args_mlst = shlex.split(cmd)
                 proc = Popen(args_mlst, stdout=PIPE)
-                output = proc.stdout.read()
+                output = proc.stdout.read().decode('UTF-8')
                 out = output.rstrip().split('\t')[1:]
                 ncol = len(out)
                 mlst_formatted_dict = {'MLST_Scheme': out[0],
@@ -307,7 +307,6 @@ class Isolate(object):
         cmd_grep = "grep -P '\tS\t' "+ARGS.wgs_qc+'/'+self.ID+"/kraken.tab"
         cmd_sort = 'sort -k 1 -r'
         cmd_head = 'head -3'
-
         #Split the cmds using shlex, store in args
         args_grep = shlex.split(cmd_grep)
         args_sort = shlex.split(cmd_sort)
@@ -318,7 +317,7 @@ class Isolate(object):
         proc2 = Popen(args_sort, stdin=proc1.stdout, stdout=PIPE)
         proc3 = Popen(args_head, stdin=proc2.stdout, stdout=PIPE)
 
-        output = proc3.stdout.read()
+        output = proc3.stdout.read().decode('UTF-8')
         kraken = output.rstrip().split('\n')
         kraken = [line.strip().split('\t') for line in [_f for _f in kraken if _f]]
         return kraken
@@ -350,7 +349,7 @@ class Isolate(object):
         proc4 = Popen(args_sort, stdin=proc3.stdout, stdout=PIPE, stderr=PIPE)
         proc5 = Popen(args_head, stdin=proc4.stdout, stdout=PIPE, stderr=PIPE)
 
-        output = proc5.stdout.read()
+        output = proc5.stdout.read().decode('UTF-8')
         kraken = output.rstrip().split('\n')
         kraken = [line.strip().split('\t') for line in [_f for _f in kraken if _f]]
         return kraken
