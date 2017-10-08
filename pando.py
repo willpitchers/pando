@@ -327,7 +327,7 @@ class Isolate(object):
         Get the kraken best hit from assemblies.
         '''
         #Pipe these commands together
-        cmd_kraken = 'nice kraken --threads 2 --db /bio/db/kraken/minikraken'+\
+        cmd_kraken = 'nice kraken --threads 2 --db /home/linuxbrew/db/kraken//microbekraken'+\
                      ' --fasta-input '+ARGS.wgs_qc+'/'+self.ID+'/contigs.fa'
         cmd_krk_r = 'kraken-report'
         cmd_grep = "grep -P '\tS\t'"
