@@ -305,7 +305,7 @@ class Isolate(object):
         '''
         #Pipe these commands together
         cmd_grep = "grep -P '\tS\t' "+ARGS.wgs_qc+'/'+self.ID+"/kraken.tab"
-        cmd_sort = 'sort -k 1 -r'
+        cmd_sort = 'sort -k 1 -g -r'
         cmd_head = 'head -3'
         #Split the cmds using shlex, store in args
         args_grep = shlex.split(cmd_grep)
@@ -331,7 +331,7 @@ class Isolate(object):
                      ' --fasta-input '+ARGS.wgs_qc+'/'+self.ID+'/contigs.fa'
         cmd_krk_r = 'kraken-report'
         cmd_grep = "grep -P '\tS\t'"
-        cmd_sort = 'sort -k 1 -r'
+        cmd_sort = 'sort -k 1 -g -r'
         cmd_head = 'head -3'
 
         #Split the cmds using shlex, store in args
