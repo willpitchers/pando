@@ -57,16 +57,15 @@ from Bio.Phylo.TreeConstruction import DistanceCalculator
 from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
 import pandas as pd
 from ete3 import Tree
+from multiprocessing import cpu_count
 
-
-VERSION = 'pando version 2.3.7'
+VERSION = 'pando version 3.1.1'
 
 
 # set up the arguments parser to deal with the command line input
-PARSER = argparse.ArgumentParser(description='Run exploratory analyses.')
-PARSER.add_argument('-i', '--mdu_read_IDs', help="One MDU-ID per line\
-                    (required). Put in same folder as run folder.", #any path?
-                    required=True)
+PARSER = argparse.ArgumentParser(description='Run exploratory analyses.',
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+PARSER.add_argument('mdu_read_IDs', help="One MDU-ID per line")
 PARSER.add_argument('-n', '--new_IDs', help='Enter IDs (space delimited) that\
                     you wish to \'flag-if-new\' in the final table.',
                     nargs='+', required=False)
@@ -79,8 +78,8 @@ PARSER.add_argument('-N', '--Nullarbor_folders', help='Are you running this on\
 PARSER.add_argument('-d', '--delete_tempdirs', help='Delete tempdirs created\
                     during run? Default=\'yes\'.', default='yes',
                     required=False)
-PARSER.add_argument("-t", "--threads", help='Number of threads,\
-                    default=\'72\'', default=72, type=int, required=False)
+PARSER.add_argument("-t", "--threads", help='Number of threads',
+                    default=cpu_count(), type=int, required=False)
 PARSER.add_argument('-a', '--andi_run', help='Run andi phylogenomic analysis?\
                     Default=\'no\'', default='no', required=False)
 PARSER.add_argument('-r', '--roary_run', help='Run roary pangenome analysis?\
@@ -111,9 +110,8 @@ ARGS = PARSER.parse_args()
 if ARGS.version:
     print('This is '+VERSION)
     sys.exit()
-if ARGS.threads > 72:
-    print('Number of requested threads must be less than 72. Exiting now.')
-    sys.exit()
+if ARGS.threads > cpu_count():
+    sys.exit(f'Number of requested threads must be less than {cpu_count()}.')
 print('\nStarting '+VERSION+'...')
 print(str(ARGS.threads) +' CPU processors requested.')
 
