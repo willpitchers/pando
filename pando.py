@@ -40,29 +40,22 @@ time nice python pando.py -i isos.txt
 import os
 import argparse
 import sys
-import string
 import random
 from subprocess import Popen, PIPE
 import shlex
-import tempfile
 import shutil
-import itertools
 import glob
-from collections import defaultdict
 from multiprocessing import Pool
 import pandas as pd
 from multiprocessing import cpu_count
 
-VERSION = 'pando version 3.1.1'
+VERSION = 'pando version 3.1.1, Tuesday 22nd May 2018'
 
 
 # set up the arguments parser to deal with the command line input
-PARSER = argparse.ArgumentParser(description='Run exploratory analyses.',
+PARSER = argparse.ArgumentParser(description='Run QC summary analysis.',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-PARSER.add_argument('mdu_read_IDs', help="One MDU-ID per line")
-PARSER.add_argument('-n', '--new_IDs', help='Enter IDs (space delimited) that\
-                    you wish to \'flag-if-new\' in the final table.',
-                    nargs='+', required=False)
+PARSER.add_argument('mdu_read_IDs', help="Excel spreadsheet LIMS request.")
 PARSER.add_argument('-w', '--wgs_qc', help='Path to WGS QC, inlude final \'/\'\
                     . ',
                     default='/mnt/seq/MDU/QC/', required=False)
@@ -75,9 +68,9 @@ PARSER.add_argument('-d', '--delete_tempdirs', help='Delete tempdirs created\
 PARSER.add_argument("-t", "--threads", help='Number of threads',
                     default=cpu_count(), type=int, required=False)
 PARSER.add_argument('-a', '--andi_run', help='Run andi phylogenomic analysis?\
-                    ', default='no', required=False)
+                    ', default=False, action='store_true', required=False)
 PARSER.add_argument('-r', '--roary_run', help='Run roary pangenome analysis?\
-                    ', default='no', required=False)
+                    ', default=False, action='store_true', required=False)
 PARSER.add_argument('-m', '--metadata_run', help='Gather metadata for all\
                     isolates?', default=True, action='store_false')
 PARSER.add_argument('-s', '--model_andi_distance', help='Substitution model.\
@@ -86,19 +79,15 @@ PARSER.add_argument('-s', '--model_andi_distance', help='Substitution model.\
 PARSER.add_argument('-c', '--percent_cutoff', help='For abricate, call the\
                     gene \'present\' if greater than this value and \'maybe\'\
                     if less than this value.', default=95, type=int, required=False)
-PARSER.add_argument('-x', '--excel_spreadsheet', help='Parse excel spreadsheet\
-                    of metadata (.xlsx format)to extract LIMS data.\
-                    The data must start on line 5 (1-based indexing, as per\
-                    Excel line numbers), which is default for LIMS, and\
-                    contain columns with the labels \'MDU sample ID\',\
-                    \'Species identification (MALDI-TOF)\',\
-                    \'Species identification (Subm. lab)\' and \'Submitter\'.',
-                    required=False)
 PARSER.add_argument('-v', '--version', help='Print version number and exit.\
                     ', default=False, action="store_true",
                     required=False)
 
 ARGS = PARSER.parse_args()
+
+
+EXCEL_OUT = (f"{os.path.splitext(os.path.basename(ARGS.mdu_read_IDs))[0]}" \
+             f"_results.xlsx")
 
 if ARGS.version:
     print('This is '+VERSION)
@@ -159,7 +148,7 @@ class Isolate(object):
         Store the path to the assembly, or tell the user if it doesn't exist.
         Write missing IDs to file. Print the filename of missing isolates.
         '''
-        isolate_qc_contigs = ARGS.wgs_qc+self.ID+'/contigs.fa'
+        isolate_qc_contigs = os.path.join(ARGS.wgs_qc, self.ID, 'contigs.fa')
         if os.path.exists(isolate_qc_contigs):
             return isolate_qc_contigs
         else:
@@ -229,6 +218,7 @@ class Isolate(object):
         y = {key:'yes' for (key) in yes}
         m = {key: 'maybe' for (key) in maybe}
         #Join dictionaries m and y to form ab_results
+        import itertools
         ab_results = dict(itertools.chain(iter(y.items()), iter(m.items())))
         #Convert to pandas dataframe
         abricate_results = pd.DataFrame([ab_results], index=[self.ID])
@@ -360,6 +350,7 @@ def shortened_ID():
     Create a random 9 character (alphanumeric) tag for use as a tempfile
     name.
     '''
+    import string
     chars = string.ascii_uppercase + string.digits
     return ''.join(random.SystemRandom().choice(chars) for _ in range(10))
 
@@ -367,6 +358,7 @@ def make_tempdir():
     '''
     Make a temporary directory.
     '''
+    import tempfile
     tempdir = tempfile.mkdtemp(dir='.')
     return tempdir
 
@@ -399,9 +391,7 @@ def get_isolate_request_IDs(ID_file):
     ID file must contain only one ID per line.
     '''
     IDs = pd.read_excel(ID_file, skiprows=0, index_col=0)
-    IDs = list(set(IDs.index.values))
     return IDs
-
 def new_IDs(IDs):
     '''
     Find the new isolate IDs to flag in the final supermatrix of metadata.'
@@ -502,16 +492,6 @@ def metricsReads_multiprocessing(iso):
     ID = Isolate(iso)
     return ID.get_yield()
 
-def excel_metadata(xlsx_file):
-    '''
-    Read in an excel spreadsheet.
-    '''
-    xlsx = pd.read_excel(xlsx_file, skiprows=0, index_col=0)
-    print('Excel spreadsheet:\n')
-    print(xlsx)
-    print('')
-    return xlsx
-
 def prokka(params):
     '''
     Run prokka on the isolate. Unpack params to get iso and assembly_tempdir.
@@ -564,7 +544,9 @@ def main():
     '''
 
     #i) read in the IDs from file
-    IDs = get_isolate_request_IDs(ARGS.mdu_read_IDs)
+    xls_table = get_isolate_request_IDs(ARGS.mdu_read_IDs)
+    IDs = list(set(xls_table.index.values))
+
     #base should be a global, given that it is used in other functions too.
     base = os.path.splitext(ARGS.mdu_read_IDs)[0]
 
@@ -577,19 +559,12 @@ def main():
     #iii) make tempdir to store the temp_contigs there for 'andi' analysis.
     assembly_tempdir = make_tempdir()
 
-    #iv) flag new isolate IDs.
-    new_ids = None
-    if ARGS.new_IDs != None:
-        new_ids = new_IDs(ARGS.new_IDs)
-    #v) read in the LIMS metadata
-    if ARGS.excel_spreadsheet != None:
-        xls_table = excel_metadata(ARGS.excel_spreadsheet)
-
     #vi) Copy contigs to become temp_contigs into tempdir, only if andi
     #requested.
     #Translation dict to store {random 9-character filename: original filename}
     iso_ID_trans = {}
     #Dict to store each isolate under each consensus species#####maybe delete
+    from collections import defaultdict
     isos_grouped_by_cons_spp = defaultdict(list)
     for iso in isos:
         #Instantiate an Isolate class for each isolate in isolates
@@ -600,7 +575,7 @@ def main():
         short_id = shortened_ID()
         #Store key,value as original_name,short_id for later retrieval.
         iso_ID_trans[iso] = short_id
-        if 'y' in ARGS.andi_run.lower():
+        if ARGS.andi_run:
             cmd = 'ln -s '+assembly_path+' '+assembly_tempdir+'/'+short_id+\
                   '_contigs.fa'
             os.system(cmd)
@@ -628,7 +603,7 @@ def main():
         print('\nRunning kraken on the assemblies (SPAdes contigs.fa files):')
         results_k_cntgs = p.map(kraken_contigs_multiprocessing, isos)
         #concat the dataframe objects
-        res_k_cntgs = pd.concat(results_k_cntgs, axis=0)
+        res_k_cntgs = pd.concat(results_k_cntgs, axis=0, sort=False)
         print('\nKraken_contigs results gathered from kraken on contigs...')
 
         #Multiprocessor retrieval of kraken results on reads.  Single thread
@@ -657,7 +632,7 @@ def main():
         #Multiprocessor retrieval of abricate results. Single process
         #per job.
         results_abricate = p.map(abricate_multiprocessing, isos)
-        res_all_abricate = pd.concat(results_abricate, axis=0)
+        res_all_abricate = pd.concat(results_abricate, axis=0, sort=False)
         res_all_abricate.fillna('', inplace=True)
         print('Resistome hits gathered from abricate.tab files...')
 
@@ -679,28 +654,6 @@ def main():
         c = 0
         for iso in isos:
             iso_df = []
-#             if ARGS.excel_spreadsheet != None:
-#                 need to remove the suffixes so as to be able to match LIMS
-#                 excel metadata.
-#                 if '-' in iso:
-#                     iso_nosuffix = iso.split('-')
-#                     iso_nosuffix = iso_nosuffix[0]+'-'+iso_nosuffix[1]
-#                 else:
-#                     iso_nosuffix = iso
-#                 submitter = xls_table.loc[iso_nosuffix, 'Submitter']
-#                 maldi = xls_table.loc[iso_nosuffix,
-#                                       'Species identification (MALDI-TOF)']
-#                 sp_id_subm = xls_table.loc[iso_nosuffix,
-#                                            'Species identification (Subm. lab)']
-#                 lims = {'sp_LIMS_MALDI-Tof': maldi, 'sp_LIMS_SubmLab':
-#                         sp_id_subm, 'LIMS_Submitter': submitter}#,
-#                         'Final_resgenes_PCR': PCR_resgenes}
-#                 lims_df = xls_table
-#                 while c < 1:
-#                     print('LIMS metadata added to collection...')
-#                     c += 1
-#                 iso_df.append(lims_df)
-#                 print(f'isos_df {iso_df}')
             sample = Isolate(iso)
             short_id = iso_ID_trans[iso]
             species_cntgs = res_k_cntgs.loc[iso, 'sp_krkn1_cntgs']
@@ -714,16 +667,9 @@ def main():
             species_consensus = {'sp_krkn_ReadAndContigConsensus':species}
             species_cons_df = pd.DataFrame([species_consensus], index=[iso])
             iso_df.append(species_cons_df)
-#             if new_ids != None:
-#                 if iso in new_ids:
-#                     new_iso = {'0_new':'yes'}
-#                     new_iso_df = pd.DataFrame([new_iso], index=[iso])
-#                     iso_df.append(new_iso_df)
             iso_df_pd = pd.concat(iso_df, axis=1)
             summary_isos.append(iso_df_pd)
 
-#         print('Remaining isolate data gathered (mlst, species consensus,'+\
-#               ' flag-if-new)...')
         #Glue the isolate by isolate metadata into a single df
         summary_isos_df = pd.concat(summary_isos)
         #Glue the dataframes built during multiprocessing processes
@@ -731,8 +677,7 @@ def main():
         #Finish up with everything in one table!
         metadata_overall = pd.concat([xls_table, summary_isos_df, summary_frames_df],
                                      axis=1, sort=False)
-        
-#         sys.exit(f"metadata_overall {metadata_overall}")
+
         metadata_overall.fillna('', inplace=True)
         print('\nMetadata super-matrix:')
         #Write this supermatrix (metadata_overall) to csv and tab/tsv
@@ -740,18 +685,17 @@ def main():
         tsv = os.path.abspath(base+'_metadataAll.tab')
         json = os.path.abspath(base+'_metadataAll.json')
         metadata_overall.to_csv(sys.stdout)
-#         metadata_overall.to_csv(tsv, mode='w', sep='\t', index=True,
-#                                 index_label='name')
-#         metadata_overall.to_json(json)
-#         print('\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
-#               ' isolates written to '+csv+' and '+tsv+'.')
-#         #Populate the isos_grouped_by_cons_spp dict with isolate IDs
+        writer = pd.ExcelWriter(EXCEL_OUT)
+        metadata_overall.to_excel(writer,'AMR_results', freeze_panes=(1, 1))
+        writer.save()
+        print(f"\nResults written to {os.path.abspath(EXCEL_OUT)}")
+
         for k, v in zip(metadata_overall['sp_krkn_ReadAndContigConsensus'],
                         metadata_overall.index):
             isos_grouped_by_cons_spp[k.replace(' ', '_')].append(v)
 
     #Run andi?
-    if 'y' in ARGS.andi_run.lower():
+    if ARGS.andi_run:
         #Run andi
         andi_mat = 'andi_'+ARGS.model_andi_distance+'dist_'+base+'.mat'
         andi_c = 'nice andi -j -m '+ARGS.model_andi_distance+' -t '+\
@@ -804,7 +748,7 @@ def main():
               ' distance, midpoint-rooted) written to '+t_out+'.')
 
     #Run roary?
-    if 'y' in ARGS.roary_run.lower():
+    if ARGS.roary_run:
         roary_keepers = [
                         "accessory.header.embl",
                         "accessory.tab",
