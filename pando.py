@@ -398,7 +398,8 @@ def get_isolate_request_IDs(ID_file):
     Reads in the MDU IDs from the request IDs file and returns IDs as a list.
     ID file must contain only one ID per line.
     '''
-    IDs = list(set([_f for _f in [ID.rstrip() for ID in open(ID_file, 'r').readlines()] if _f]))
+    IDs = pd.read_excel(ID_file, skiprows=0, index_col=0)
+    IDs = list(set(IDs.index.values))
     return IDs
 
 def new_IDs(IDs):
@@ -505,7 +506,7 @@ def excel_metadata(xlsx_file):
     '''
     Read in an excel spreadsheet.
     '''
-    xlsx = pd.read_excel(xlsx_file, skiprows=4, index_col=0)
+    xlsx = pd.read_excel(xlsx_file, skiprows=0, index_col=0)
     print('Excel spreadsheet:\n')
     print(xlsx)
     print('')
@@ -543,7 +544,7 @@ def pw_calc(aln_seq_coords):
                 aln[j].seq) if len(set(y)) > 1 and 'N' not in set(y) and '-' not in set(y) and '?' not in set(y)])
         df = pd.DataFrame([{aln[j].id: x}], index=[name])
         df_dist.append(df)
-    return pd.concat(df_dist, axis=1)
+    return pd.concat(df_dist, axis=1, sort=False)
 
 
 def main():
@@ -627,7 +628,7 @@ def main():
         print('\nRunning kraken on the assemblies (SPAdes contigs.fa files):')
         results_k_cntgs = p.map(kraken_contigs_multiprocessing, isos)
         #concat the dataframe objects
-        res_k_cntgs = pd.concat(results_k_cntgs, axis=0, sort=False)
+        res_k_cntgs = pd.concat(results_k_cntgs, axis=0)
         print('\nKraken_contigs results gathered from kraken on contigs...')
 
         #Multiprocessor retrieval of kraken results on reads.  Single thread
@@ -656,7 +657,7 @@ def main():
         #Multiprocessor retrieval of abricate results. Single process
         #per job.
         results_abricate = p.map(abricate_multiprocessing, isos)
-        res_all_abricate = pd.concat(results_abricate, axis=0, sort=False)
+        res_all_abricate = pd.concat(results_abricate, axis=0)
         res_all_abricate.fillna('', inplace=True)
         print('Resistome hits gathered from abricate.tab files...')
 
@@ -678,31 +679,28 @@ def main():
         c = 0
         for iso in isos:
             iso_df = []
-            if ARGS.excel_spreadsheet != None:
-                #need to remove the suffixes so as to be able to match LIMS
-                #excel metadata.
-                if '-' in iso:
-                    iso_nosuffix = iso.split('-')
-                    iso_nosuffix = iso_nosuffix[0]+'-'+iso_nosuffix[1]
-                else:
-                    iso_nosuffix = iso
-                submitter = xls_table.loc[iso_nosuffix, 'Submitter']
-                maldi = xls_table.loc[iso_nosuffix,
-                                      'Species identification (MALDI-TOF)']
-                sp_id_subm = xls_table.loc[iso_nosuffix,
-                                           'Species identification (Subm. lab)']
-#                PCR_resgenes = xls_table.loc[iso_nosuffix,
-#                                             'Final resist genes/alleles']
-#                PCR_resgenes = str(PCR_resgenes)
-#                PCR_resgenes = PCR_resgenes.replace(',', ';')
-                lims = {'sp_LIMS_MALDI-Tof': maldi, 'sp_LIMS_SubmLab':
-                        sp_id_subm, 'LIMS_Submitter': submitter}#,
-                        #'Final_resgenes_PCR': PCR_resgenes}
-                lims_df = pd.DataFrame([lims], index=[iso])
-                while c < 1:
-                    print('LIMS metadata added to collection...')
-                    c += 1
-                iso_df.append(lims_df)
+#             if ARGS.excel_spreadsheet != None:
+#                 need to remove the suffixes so as to be able to match LIMS
+#                 excel metadata.
+#                 if '-' in iso:
+#                     iso_nosuffix = iso.split('-')
+#                     iso_nosuffix = iso_nosuffix[0]+'-'+iso_nosuffix[1]
+#                 else:
+#                     iso_nosuffix = iso
+#                 submitter = xls_table.loc[iso_nosuffix, 'Submitter']
+#                 maldi = xls_table.loc[iso_nosuffix,
+#                                       'Species identification (MALDI-TOF)']
+#                 sp_id_subm = xls_table.loc[iso_nosuffix,
+#                                            'Species identification (Subm. lab)']
+#                 lims = {'sp_LIMS_MALDI-Tof': maldi, 'sp_LIMS_SubmLab':
+#                         sp_id_subm, 'LIMS_Submitter': submitter}#,
+#                         'Final_resgenes_PCR': PCR_resgenes}
+#                 lims_df = xls_table
+#                 while c < 1:
+#                     print('LIMS metadata added to collection...')
+#                     c += 1
+#                 iso_df.append(lims_df)
+#                 print(f'isos_df {iso_df}')
             sample = Isolate(iso)
             short_id = iso_ID_trans[iso]
             species_cntgs = res_k_cntgs.loc[iso, 'sp_krkn1_cntgs']
@@ -716,36 +714,38 @@ def main():
             species_consensus = {'sp_krkn_ReadAndContigConsensus':species}
             species_cons_df = pd.DataFrame([species_consensus], index=[iso])
             iso_df.append(species_cons_df)
-            if new_ids != None:
-                if iso in new_ids:
-                    new_iso = {'0_new':'yes'}
-                    new_iso_df = pd.DataFrame([new_iso], index=[iso])
-                    iso_df.append(new_iso_df)
+#             if new_ids != None:
+#                 if iso in new_ids:
+#                     new_iso = {'0_new':'yes'}
+#                     new_iso_df = pd.DataFrame([new_iso], index=[iso])
+#                     iso_df.append(new_iso_df)
             iso_df_pd = pd.concat(iso_df, axis=1)
             summary_isos.append(iso_df_pd)
-        print('Remaining isolate data gathered (mlst, species consensus,'+\
-              ' flag-if-new)...')
+
+#         print('Remaining isolate data gathered (mlst, species consensus,'+\
+#               ' flag-if-new)...')
         #Glue the isolate by isolate metadata into a single df
         summary_isos_df = pd.concat(summary_isos)
         #Glue the dataframes built during multiprocessing processes
         summary_frames_df = pd.concat(summary_frames, axis=1)
         #Finish up with everything in one table!
-        metadata_overall = pd.concat([summary_isos_df, summary_frames_df],
-                                     axis=1)
+        metadata_overall = pd.concat([xls_table, summary_isos_df, summary_frames_df],
+                                     axis=1, sort=False)
+        
+#         sys.exit(f"metadata_overall {metadata_overall}")
         metadata_overall.fillna('', inplace=True)
         print('\nMetadata super-matrix:')
-        print(metadata_overall)
         #Write this supermatrix (metadata_overall) to csv and tab/tsv
         csv = os.path.abspath(base+'_metadataAll.csv')
         tsv = os.path.abspath(base+'_metadataAll.tab')
         json = os.path.abspath(base+'_metadataAll.json')
-        metadata_overall.to_csv(csv, mode='w', index=True, index_label='name')
-        metadata_overall.to_csv(tsv, mode='w', sep='\t', index=True,
-                                index_label='name')
-        metadata_overall.to_json(json)
-        print('\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
-              ' isolates written to '+csv+' and '+tsv+'.')
-        #Populate the isos_grouped_by_cons_spp dict with isolate IDs
+        metadata_overall.to_csv(sys.stdout)
+#         metadata_overall.to_csv(tsv, mode='w', sep='\t', index=True,
+#                                 index_label='name')
+#         metadata_overall.to_json(json)
+#         print('\nMetadata super-matrix for '+str(len(metadata_overall.index))+\
+#               ' isolates written to '+csv+' and '+tsv+'.')
+#         #Populate the isos_grouped_by_cons_spp dict with isolate IDs
         for k, v in zip(metadata_overall['sp_krkn_ReadAndContigConsensus'],
                         metadata_overall.index):
             isos_grouped_by_cons_spp[k.replace(' ', '_')].append(v)
@@ -904,7 +904,7 @@ def main():
                             p = Pool(ARGS.threads)
                         print('Running pw comparisons in parallel...')
                         result = p.map(pw_calc, pairs)
-                        summary = pd.concat(result, axis=0)
+                        summary = pd.concat(result, axis=0, sort=False)
                         summary.fillna('', inplace=True)
                         with open('core_gene_alignment_SNV_distances.tab', 'w') as distmat:
                             summary.to_csv(distmat, mode='w', sep='\t', index=True, index_label='name')
@@ -918,7 +918,7 @@ def main():
                 info_list = []
                 info_list.append(roary2fripan_strains_file)
                 info_list.append(metadata_overall.loc[v, :])
-                strains_info_out = pd.concat(info_list, axis=1)
+                strains_info_out = pd.concat(info_list, axis=1, sort=False)
                 strains_info_out.to_csv(base+'_'+k+'.strains', mode='w',
                                         sep='\t', index=True,
                                         index_label='ID')
