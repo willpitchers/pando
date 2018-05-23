@@ -3,15 +3,15 @@
 With an excel spreadsheet LIMS request, run QC analyses on isolates
 
 ### Example run command on MDU servers:
-`./pando.py LIMS_DATA_20160801.xlsx`
+`pando LIMS_DATA_20160801.xlsx`
 
 
 ### Get help:
 ```
-./pando.py -h
-usage: pando.py [-h] [-w WGS_QC] [-N] [-k] [-t THREADS] [-a] [-r] [-m]
-                [-s MODEL_ANDI_DISTANCE] [-c PERCENT_CUTOFF] [-v]
-                mdu_read_IDs
+pando -h
+usage: pando [-h] [-w WGS_QC] [-N] [-k] [-t THREADS] [-a] [-r] [-m]
+             [-s MODEL_ANDI_DISTANCE] [-c PERCENT_CUTOFF] [-v]
+             mdu_read_IDs
 
 Run QC summary analysis.
 
