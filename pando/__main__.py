@@ -383,9 +383,9 @@ def get_isolate_request_IDs(ID_file):
     Reads in the MDU IDs from the request IDs file and returns IDs as a list.
     ID file must contain only one ID per line.
     '''
-    IDs = pd.read_excel(ID_file, skiprows=0, index_col=0)
-    IDs.index.name = 'ISOLATE'
-    return IDs
+    df = pd.read_excel(ID_file, skiprows=0, index_col=0)
+    return df
+
 def new_IDs(IDs):
     '''
     Find the new isolate IDs to flag in the final supermatrix of metadata.'
@@ -703,6 +703,7 @@ def main():
                                          axis=1, sort=False)
 
             metadata_overall.fillna('', inplace=True)
+            metadata_overall.index.name = 'ISOLATE'
             print('\nMetadata super-matrix:')
             #Write this supermatrix (metadata_overall) to csv and tab/tsv
             csv = os.path.abspath(base+'_metadataAll.csv')
