@@ -4,4 +4,5 @@ tmp*
 andi*
 pando.egg-info
 pando/__pycache_/*
+*/*/__pycache__
 tutorial*
