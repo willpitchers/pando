@@ -95,6 +95,31 @@ SUBPARSER_MODULES.add_parser("version", help="Print version.",
 ARGS = PARSER.parse_args()
 
 
+#Set up the file names for Nullarbor folder structure
+YIELD_FILE = 'yield.tab'
+MLST_FILE = 'mlst.tab'
+if ARGS.Nullarbor_folders == True:
+    print('Nullarbor folder structure selected.')
+    YIELD_FILE = 'yield.clean.tab'
+    MLST_FILE = 'mlst2.tab'
+
+
+#Add MLST schemes to force their usage if that species is encountered
+#Only force schemes if there are two (e.g., A baumannii and E coli)
+FORCE_MLST_SCHEME = {"Acinetobacter baumannii": "abaumannii_2",
+                     "Campylobacter jejuni": "campylobacter",
+                     #"Citrobacter freundii": "cfreundii",
+                     #"Cronobacter": "cronobacter",
+                     "Enterobacter cloacae": "ecloacae",
+                     "Escherichia coli": "ecoli",
+                     #"Klebsiella oxytoca": "koxytoca",
+                     #"Klebsiella pneumoniae": "kpneumoniae",
+                     #"Pseudomonas aeruginosa": "paeruginosa"
+                     "Shigella sonnei": "ecoli",
+                     "Salmonella enterica": "senterica",
+                     "Vibrio cholerae": "vcholerae"
+                    }
+
 
 
 class Isolate(object):
@@ -531,13 +556,6 @@ def main():
 
         print(str(ARGS.threads) +' CPU processors requested.')
 
-        #Set up the file names for Nullarbor folder structure
-        YIELD_FILE = 'yield.tab'
-        MLST_FILE = 'mlst.tab'
-        if ARGS.Nullarbor_folders == True:
-            print('Nullarbor folder structure selected.')
-            YIELD_FILE = 'yield.clean.tab'
-            MLST_FILE = 'mlst2.tab'
 
         #Check if final slash in manually specified wgs_qc path
         if ARGS.wgs_qc[-1] != '/':
@@ -546,21 +564,6 @@ def main():
             print('Exiting now.\n')
             sys.exit()
 
-        #Add MLST schemes to force their usage if that species is encountered
-        #Only force schemes if there are two (e.g., A baumannii and E coli)
-        FORCE_MLST_SCHEME = {"Acinetobacter baumannii": "abaumannii_2",
-                             "Campylobacter jejuni": "campylobacter",
-                             #"Citrobacter freundii": "cfreundii",
-                             #"Cronobacter": "cronobacter",
-                             "Enterobacter cloacae": "ecloacae",
-                             "Escherichia coli": "ecoli",
-                             #"Klebsiella oxytoca": "koxytoca",
-                             #"Klebsiella pneumoniae": "kpneumoniae",
-                             #"Pseudomonas aeruginosa": "paeruginosa"
-                             "Shigella sonnei": "ecoli",
-                             "Salmonella enterica": "senterica",
-                             "Vibrio cholerae": "vcholerae"
-                            }
 
 
         #i) read in the IDs from file
