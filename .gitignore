@@ -3,3 +3,4 @@ isolates*
 tmp*
 andi*
 pando.egg-info
+pando/__pycache_/*
