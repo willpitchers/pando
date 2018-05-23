@@ -384,6 +384,7 @@ def get_isolate_request_IDs(ID_file):
     ID file must contain only one ID per line.
     '''
     IDs = pd.read_excel(ID_file, skiprows=0, index_col=0)
+    IDs.index.name = 'ISOLATE'
     return IDs
 def new_IDs(IDs):
     '''
