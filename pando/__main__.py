@@ -2,6 +2,22 @@
 
 
 '''
+
+Uses python3.
+Email: dr.mark.schultz@gmail.com
+Github: schultzm
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 Read in metadata from Excel spreadsheet.
 Return a supermatrix of QC metadata and a tree.
 Specific for MDU folder structures and QC
@@ -10,6 +26,7 @@ Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
 
 Acknowledgements:
+Will Pitchers (usage, bug finding, feature requests)
 Torsten Seemann (pando relies heavily on Torsten's tools)
 Anders Goncalves da Silva (advice on multiprocessing)
 Dieter Bulach (advice on setting up fripan on the MDU server)
@@ -18,7 +35,6 @@ Susan Ballard (ongoing feature requests)
 Tim Stinear (advised to use more-than-kraken to bin isolates into species)
 Andrew Page (for all roary tools)
 Ben Howden (feature requests)
-Will Pitchers (feature requests)
 
 '''
 
@@ -34,8 +50,6 @@ import glob
 from multiprocessing import Pool
 import pandas as pd
 from multiprocessing import cpu_count
-
-# VERSION = 'pando version 3.1.1, Tuesday 22nd May 2018'
 
 
 # set up the arguments parser to deal with the command line input
@@ -506,9 +520,6 @@ def main():
         from .utils.version import Version
         Version()
         sys.exit()
-# 
-#     print('This is '+VERSION)
-#     sys.exit()
 
     elif ARGS.subparser_name == "run":
 
