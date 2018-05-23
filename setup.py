@@ -51,6 +51,5 @@ setup(
     author_email=pando.__author_email__,
     license=pando.__license__,
     package_data={'': ['*.fa']},
-    install_requires=['ete3>=3.1.1',
-                      'ruffus>=2.6.2'],
+    install_requires=['ete3>=3.1.1'],
 )

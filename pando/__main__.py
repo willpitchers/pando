@@ -8,7 +8,6 @@ Specific for MDU folder structures and QC
 Optionally run roary analysis or tree
 Email: dr.mark.schultz@gmail.com
 Github: https://github.com/schultzm
-YYYMMDD: 20180507
 
 Acknowledgements:
 Torsten Seemann (pando relies heavily on Torsten's tools)
@@ -19,6 +18,7 @@ Susan Ballard (ongoing feature requests)
 Tim Stinear (advised to use more-than-kraken to bin isolates into species)
 Andrew Page (for all roary tools)
 Ben Howden (feature requests)
+Will Pitchers (feature requests)
 
 '''
 
