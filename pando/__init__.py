@@ -16,8 +16,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __name__ = 'pando'
 __parent_dir__ = 'pando'
-__version__ = '3.1.1'
-__version_date__ = 'Wed 23rd May, 2018'
+__version__ = '3.1.2'
+__version_date__ = 'Thu 23rd May, 2018'
 __description__ = 'Run MDU AMR analyses'
 __author__ = 'Mark B Schultz'
 __author_email__ = 'dr.mark.schultz@gmail.com'
