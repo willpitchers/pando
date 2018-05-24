@@ -98,10 +98,6 @@ ARGS = PARSER.parse_args()
 #Set up the file names for Nullarbor folder structure
 YIELD_FILE = 'yield.tab'
 MLST_FILE = 'mlst.tab'
-if ARGS.Nullarbor_folders == True:
-    print('Nullarbor folder structure selected.')
-    YIELD_FILE = 'yield.clean.tab'
-    MLST_FILE = 'mlst2.tab'
 
 
 #Add MLST schemes to force their usage if that species is encountered
@@ -548,6 +544,11 @@ def main():
         sys.exit()
 
     elif ARGS.subparser_name == "run":
+        if ARGS.Nullarbor_folders == True:
+            print('Nullarbor folder structure selected.')
+            YIELD_FILE = 'yield.clean.tab'
+            MLST_FILE = 'mlst2.tab'
+
 
         EXCEL_OUT = (f"{os.path.splitext(os.path.basename(ARGS.LIMS_request_sheet))[0]}" \
                      f"_results.xlsx")
