@@ -60,8 +60,8 @@ SUBPARSER_ARGS1 = argparse.ArgumentParser(add_help=False)
 SUBPARSER_ARGS1.add_argument('LIMS_request_sheet', help="Excel spreadsheet LIMS request.")
 SUBPARSER_ARGS1.add_argument('-w', '--wgs_qc', help='Path to WGS QC',
                     default='/mnt/seq/MDU/QC/', required=False)
-# SUBPARSER_ARGS1.add_argument('-N', '--Nullarbor_folders', help='Run this on Nullarbor outdir?',
-#                             default=False, action="store_true", required=False)
+SUBPARSER_ARGS1.add_argument('-N', '--Nullarbor_folders', help='Run this on Nullarbor outdir?',
+                            default=False, action="store_true", required=False)
 SUBPARSER_ARGS1.add_argument('-k', '--keep_tempdirs', help='Keep tempdirs created\
                     during run?', default=False, action='store_true',
                     required=False)
@@ -92,28 +92,6 @@ SUBPARSER_MODULES.add_parser("version", help="Print version.",
                              description="Print version.")
 
 ARGS = PARSER.parse_args()
-
-#Set up the file names for Nullarbor folder structure
-YIELD_FILE = 'yield.tab'
-MLST_FILE = 'mlst.tab'
-
-
-#Add MLST schemes to force their usage if that species is encountered
-#Only force schemes if there are two (e.g., A baumannii and E coli)
-FORCE_MLST_SCHEME = {"Acinetobacter baumannii": "abaumannii_2",
-                     "Campylobacter jejuni": "campylobacter",
-                     #"Citrobacter freundii": "cfreundii",
-                     #"Cronobacter": "cronobacter",
-                     "Enterobacter cloacae": "ecloacae",
-                     "Escherichia coli": "ecoli",
-                     #"Klebsiella oxytoca": "koxytoca",
-                     #"Klebsiella pneumoniae": "kpneumoniae",
-                     #"Pseudomonas aeruginosa": "paeruginosa"
-                     "Shigella sonnei": "ecoli",
-                     "Salmonella enterica": "senterica",
-                     "Vibrio cholerae": "vcholerae"
-                    }
-
 
 
 class Isolate(object):
@@ -516,6 +494,31 @@ def pw_calc(aln_seq_coords):
 
 
 def main():
+    global YIELD_FILE
+    global MLST_FILE
+    global FORCE_MLST_SCHEME
+    #Set up the file names for Nullarbor folder structure
+    YIELD_FILE = 'yield.tab'
+    MLST_FILE = 'mlst.tab'
+
+
+    #Add MLST schemes to force their usage if that species is encountered
+    #Only force schemes if there are two (e.g., A baumannii and E coli)
+    FORCE_MLST_SCHEME = {"Acinetobacter baumannii": "abaumannii_2",
+                         "Campylobacter jejuni": "campylobacter",
+                         #"Citrobacter freundii": "cfreundii",
+                         #"Cronobacter": "cronobacter",
+                         "Enterobacter cloacae": "ecloacae",
+                         "Escherichia coli": "ecoli",
+                         #"Klebsiella oxytoca": "koxytoca",
+                         #"Klebsiella pneumoniae": "kpneumoniae",
+                         #"Pseudomonas aeruginosa": "paeruginosa"
+                         "Shigella sonnei": "ecoli",
+                         "Salmonella enterica": "senterica",
+                         "Vibrio cholerae": "vcholerae"
+                        }
+
+
     '''
     Read in the MDU-IDs from file. For each ID, instantiate an object of
     class Isolate.  This class associates QC data with the ID tag.
@@ -530,7 +533,6 @@ def main():
     'new' isolates.  Export the tree and metadata to .csv, .tsv/.tab file.
     Export the 'isolates not found' to text file too.
     '''
-
     if not ARGS.subparser_name:
         PARSER.print_help()
         sys.exit()
@@ -542,14 +544,11 @@ def main():
         sys.exit()
 
     else:# ARGS.subparser_name == "run":
-#         if ARGS.Nullarbor_folders:
-#             print(ARGS.Nullarbor_folders)
-#             sys.exit()
-#             print('Nullarbor folder structure selected.')
-#             YIELD_FILE = 'yield.clean.tab'
-#             MLST_FILE = 'mlst2.tab'
+        if ARGS.Nullarbor_folders:
+            print('Nullarbor folder structure selected.')
+            YIELD_FILE = 'yield.clean.tab'
+            MLST_FILE = 'mlst2.tab'
 
-        print(f"YIELD_FILE {YIELD_FILE}")
         EXCEL_OUT = (f"{os.path.splitext(os.path.basename(ARGS.LIMS_request_sheet))[0]}" \
                      f"_results.xlsx")
 
@@ -909,5 +908,3 @@ def main():
         print('\nRun finished.')
 
 
-if __name__ == '__main__':
-    main()
