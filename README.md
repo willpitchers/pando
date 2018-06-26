@@ -1,4 +1,4 @@
-![pando](http://upliftconnect.com/wp-content/uploads/2016/03/pando-trees-1.jpg)
+
 # pando
 With an excel spreadsheet LIMS request, run QC analyses on isolates
 
