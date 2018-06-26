@@ -711,7 +711,7 @@ def main():
             json = os.path.abspath(base+'_metadataAll.json')
             metadata_overall.to_csv(sys.stdout)
             writer = pd.ExcelWriter(EXCEL_OUT)
-            metadata_overall.to_excel(writer,'AMR_results', freeze_panes=(1, 1))
+            metadata_overall.to_excel(writer,'Sheet 1', freeze_panes=(1, 1))
             writer.save()
             print(f"\nResults written to {os.path.abspath(EXCEL_OUT)}")
 
