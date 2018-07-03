@@ -18,7 +18,7 @@ from setuptools import setup, find_packages
 import pando
 import os
 
-LONG_DESCRIPTION = 'HAV Transmission Cluster Detection'
+LONG_DESCRIPTION = 'QC exploratory analyses'
 
 if os.path.exists('README'):
     LONG_DESCRIPTION = open('README').read()

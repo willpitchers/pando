@@ -65,6 +65,8 @@ SUBPARSER_ARGS1.add_argument('-N', '--Nullarbor_folders', help='Run this on Null
 SUBPARSER_ARGS1.add_argument('-k', '--keep_tempdirs', help='Keep tempdirs created\
                     during run?', default=False, action='store_true',
                     required=False)
+SUBPARSER_ARGS1.add_argument('-d', '--kraken_db', help='Path to Kraken db',
+                             default=os.environ['KRAKEN_DEFAULT_DB'])
 SUBPARSER_ARGS1.add_argument("-t", "--threads", help='Number of threads',
                     default=cpu_count(), type=int, required=False)
 SUBPARSER_ARGS1.add_argument('-a', '--andi_run', help='Run andi phylogenomic analysis?\
@@ -273,7 +275,8 @@ class Isolate(object):
         Get the kraken best hit from assemblies.
         '''
         #Pipe these commands together
-        cmd_kraken = 'nice kraken --threads 2 --db /home/linuxbrew/db/kraken//microbekraken'+\
+        cmd_kraken = 'nice kraken --threads 2 --db '+\
+                     os.path.abspath(ARGS.kraken_db)+\
                      ' --fasta-input '+ARGS.wgs_qc+'/'+self.ID+'/contigs.fa'
         cmd_krk_r = 'kraken-report'
         cmd_grep = "grep -P '\tS\t'"
