@@ -252,7 +252,7 @@ class Isolate(object):
         Get the kraken best hit from reads.
         '''
         #Pipe these commands together
-        cmd_grep = "grep -P '\tS\t' "+ARGS.wgs_qc+'/'+self.ID+"/kraken\*.tab"
+        cmd_grep = "grep -P '\tS\t' "+ARGS.wgs_qc+'/'+self.ID+"/kraken*"
         cmd_sort = 'sort -k 1 -g -r'
         cmd_head = 'head -3'
         #Split the cmds using shlex, store in args
